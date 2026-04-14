@@ -42,13 +42,34 @@ git clone git@github.com:davidminin/teamflow.git
 cd teamflow
 ```
 
-### 2. Run Locally
+### 2. Configure Environment
+
+```bash
+cp .env.example .env
+```
+
+Then update secrets in `.env` (at minimum: `N8N_ENCRYPTION_KEY`, `LANGFUSE_NEXTAUTH_SECRET`, `LANGFUSE_SALT`, `LANGFUSE_INIT_USER_PASSWORD`, and project keys).
+
+This setup uses one shared Postgres instance/database (`POSTGRES_DB`) with separate schemas:
+- `n8n` service uses schema `n8n`
+- `Langfuse` uses schema `langfuse`
+
+### 3. Run Locally
 
 ```bash
 docker compose up -d
 ```
 
-### 3. Deploy To Cloud
+Open:
+- `n8n`: [http://localhost:5678](http://localhost:5678)
+- `Langfuse`: [http://localhost:3000](http://localhost:3000)
+
+The stack auto-creates one shared Langfuse project using the `.env` values:
+- Organization: `LANGFUSE_INIT_ORG_NAME`
+- Project: `LANGFUSE_INIT_PROJECT_NAME`
+- Admin user: `LANGFUSE_INIT_USER_EMAIL`
+
+### 4. Deploy To Cloud
 
 
 Coming soon!
