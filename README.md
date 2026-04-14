@@ -6,6 +6,15 @@ Fully automate your team's work usingthe best open source LLMs.
 
 ***Note:** This is an experimental project so expect some work in progress*
 
+## AI Contributor Context
+
+For consistent AI-assisted output and team standards, start here before making changes:
+
+- `AGENTS.md` (global repository AI policy and guardrails)
+- `.ai/skills/INDEX.md` (shared skill map and ownership)
+
+If your change affects architecture, workflow, or team process, update the relevant policy or skill file in the same PR.
+
 ###  ✊ **Automate for cheap at scale**
 
 Open source tooling is dramatically cheaper than frontier LLM usage and rather than paying per token, you should just be covering hardware and electricity (which you already pay for).

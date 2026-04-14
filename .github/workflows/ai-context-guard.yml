@@ -1,0 +1,86 @@
+name: AI Context Guard
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate-ai-context:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify required AI context files exist
+        run: |
+          set -euo pipefail
+
+          required_files=(
+            "AGENTS.md"
+            ".ai/skills/INDEX.md"
+            ".ai/skills/delivery-standards/SKILL.md"
+            ".ai/skills/architecture-decisions/SKILL.md"
+            ".ai/skills/repo-workflows/SKILL.md"
+            ".ai/skills/safety-and-secrets/SKILL.md"
+            ".ai/skills/service-specific-template/SKILL.md"
+            ".github/pull_request_template.md"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "Missing required file: $file"
+              exit 1
+            fi
+          done
+
+      - name: Verify AGENTS.md required sections
+        run: |
+          set -euo pipefail
+
+          required_sections=(
+            "## Scope"
+            "## Mandatory Startup Context"
+            "## Definition Of Done"
+            "## Security And Data Handling"
+            "## Architecture And Process Change Policy"
+            "## Team Skill Contract"
+          )
+
+          for section in "${required_sections[@]}"; do
+            if ! rg --fixed-strings --quiet "$section" AGENTS.md; then
+              echo "Missing AGENTS.md section: $section"
+              exit 1
+            fi
+          done
+
+      - name: Verify each shared skill has required contract sections
+        run: |
+          set -euo pipefail
+
+          skill_files=(
+            ".ai/skills/delivery-standards/SKILL.md"
+            ".ai/skills/architecture-decisions/SKILL.md"
+            ".ai/skills/repo-workflows/SKILL.md"
+            ".ai/skills/safety-and-secrets/SKILL.md"
+            ".ai/skills/service-specific-template/SKILL.md"
+          )
+
+          required_skill_sections=(
+            "## Purpose"
+            "## Trigger Conditions"
+            "## Mandatory Constraints"
+            "## Examples"
+            "## Anti-Patterns"
+          )
+
+          for skill in "${skill_files[@]}"; do
+            for section in "${required_skill_sections[@]}"; do
+              if ! rg --fixed-strings --quiet "$section" "$skill"; then
+                echo "Missing section '$section' in $skill"
+                exit 1
+              fi
+            done
+          done
