@@ -1,6 +1,23 @@
 name: teamflow
 
 services:
+  portal:
+    build:
+      context: ./apps/portal
+      dockerfile: Dockerfile
+    container_name: teamflow-portal
+    restart: unless-stopped
+    depends_on:
+      - n8n
+      - langfuse
+    environment:
+      N8N_API_URL: http://n8n:5678/api/v1
+      N8N_EDITOR_URL: ${N8N_URL}
+      N8N_API_KEY: ${N8N_API_KEY}
+      LANGFUSE_URL: ${LANGFUSE_URL}
+    ports:
+      - "3001:3001"
+
   postgres:
     image: postgres:16-alpine
     container_name: teamflow-postgres

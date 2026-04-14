@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-04-14T13:40:35.196Z",
+  "departments": [
+    {
+      "slug": "qa",
+      "teams": [
+        {
+          "slug": "qa-automation",
+          "n8nNamespace": "qa/qa-automation",
+          "workflowsPath": "teams/qa/qa-automation/workflows"
+        }
+      ]
+    },
+    {
+      "slug": "eng",
+      "teams": [
+        {
+          "slug": "platform",
+          "n8nNamespace": "eng/platform",
+          "workflowsPath": "teams/eng/platform/workflows"
+        }
+      ]
+    },
+    {
+      "slug": "ops",
+      "teams": [
+        {
+          "slug": "incident-response",
+          "n8nNamespace": "ops/incident-response",
+          "workflowsPath": "teams/ops/incident-response/workflows"
+        }
+      ]
+    }
+  ]
+}

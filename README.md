@@ -35,6 +35,8 @@ Enjoy incredible cost savings by running most flows on your local device and fal
 ## 🚀 Quickstart
 **Dependencies:** Docker Hub \([Mac](https://docs.docker.com/desktop/setup/install/mac-install/), [Windows](https://docs.docker.com/desktop/setup/install/windows-install)\)
 
+**Node requirement:** Node.js `22.x` is enforced via `.nvmrc`, `.npmrc`, and `engines`.
+
 ### 1. Clone repo
 
 ```bash
@@ -54,6 +56,14 @@ This setup uses one shared Postgres instance/database (`POSTGRES_DB`) with separ
 - `n8n` service uses schema `n8n`
 - `Langfuse` uses schema `langfuse`
 
+Bootstrap team folders and department mapping:
+
+```bash
+npm run bootstrap -- --departments "qa,eng,ops" --create-default-teams
+```
+
+This creates `teams/<department>/<team>/{workflows,code,docs}` and updates portal manifest data.
+
 ### 3. Run Locally
 
 ```bash
@@ -61,6 +71,7 @@ docker compose up -d
 ```
 
 Open:
+- `Portal`: [http://localhost:3001](http://localhost:3001)
 - `n8n`: [http://localhost:5678](http://localhost:5678)
 - `Langfuse`: [http://localhost:3000](http://localhost:3000)
 
