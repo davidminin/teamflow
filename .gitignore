@@ -1,0 +1,38 @@
+# Secrets and local env files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+
+# n8n local data and exports
+.n8n/
+n8n_data/
+n8n-backups/
+*.n8n-export.json
+
+# Langfuse / observability local data
+langfuse_data/
+langfuse-db-data/
+postgres_data/
+clickhouse_data/
+redis_data/
+
+# Local databases and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+
+# OS/editor noise
+.DS_Store
+.idea/
+.vscode/
+
+# Dependencies and build outputs
+node_modules/
+dist/
+build/
