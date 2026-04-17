@@ -1,0 +1,310 @@
+{
+  "name": "ClickUp Task Router",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clickup-events",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "ClickUp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 300],
+      "webhookId": "clickup-events"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "taskCreated",
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.event }}",
+                    "rightValue": "taskCreated",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "taskStatusUpdated",
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.event }}",
+                    "rightValue": "taskStatusUpdated",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "taskCommentPosted",
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.event }}",
+                    "rightValue": "taskCommentPosted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "taskUpdated",
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.event }}",
+                    "rightValue": "taskUpdated",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "fallbackOutput": {
+            "outputKey": "other"
+          }
+        },
+        "options": {}
+      },
+      "id": "event-router",
+      "name": "Route by Event",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "action",
+              "name": "action",
+              "value": "=New task created: {{ $json.task_id }}",
+              "type": "string"
+            },
+            {
+              "id": "task_id",
+              "name": "task_id",
+              "value": "={{ $json.task_id }}",
+              "type": "string"
+            },
+            {
+              "id": "event",
+              "name": "event",
+              "value": "={{ $json.event }}",
+              "type": "string"
+            },
+            {
+              "id": "received_at",
+              "name": "received_at",
+              "value": "={{ $json.received_at }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "on-task-created",
+      "name": "On Task Created",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 140]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "action",
+              "name": "action",
+              "value": "=Task status changed: {{ $json.task_id }}",
+              "type": "string"
+            },
+            {
+              "id": "task_id",
+              "name": "task_id",
+              "value": "={{ $json.task_id }}",
+              "type": "string"
+            },
+            {
+              "id": "event",
+              "name": "event",
+              "value": "={{ $json.event }}",
+              "type": "string"
+            },
+            {
+              "id": "history",
+              "name": "history",
+              "value": "={{ JSON.stringify($json.history_items) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "on-status-change",
+      "name": "On Status Change",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "action",
+              "name": "action",
+              "value": "=New comment on task: {{ $json.task_id }}",
+              "type": "string"
+            },
+            {
+              "id": "task_id",
+              "name": "task_id",
+              "value": "={{ $json.task_id }}",
+              "type": "string"
+            },
+            {
+              "id": "event",
+              "name": "event",
+              "value": "={{ $json.event }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "on-comment",
+      "name": "On Comment",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 460]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "action",
+              "name": "action",
+              "value": "=Task updated: {{ $json.task_id }}",
+              "type": "string"
+            },
+            {
+              "id": "task_id",
+              "name": "task_id",
+              "value": "={{ $json.task_id }}",
+              "type": "string"
+            },
+            {
+              "id": "event",
+              "name": "event",
+              "value": "={{ $json.event }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "on-task-updated",
+      "name": "On Task Updated",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 620]
+    },
+    {
+      "parameters": {
+        "content": "## ClickUp Task Router\n\nThis workflow receives ClickUp webhook events forwarded by the TeamFlow portal and routes them by event type.\n\n### How it works\n1. Portal receives ClickUp webhook at `/api/webhooks/clickup`\n2. Portal validates the signature and forwards to this n8n webhook\n3. The Switch node routes events to the appropriate handler\n4. Add your own logic after each handler (Slack notify, trigger Cursor, etc.)\n\n### Next steps\n- Connect \"On Task Created\" → Slack notification\n- Connect \"On Status Change\" → trigger local worker\n- Add HTTP Request nodes to call external APIs",
+        "height": 340,
+        "width": 400
+      },
+      "id": "sticky-note",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [220, -60]
+    }
+  ],
+  "connections": {
+    "ClickUp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Route by Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Event": {
+      "main": [
+        [
+          {
+            "node": "On Task Created",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "On Status Change",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "On Comment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "On Task Updated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "clickup"
+    },
+    {
+      "name": "webhooks"
+    }
+  ],
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "teamflow"
+  }
+}
