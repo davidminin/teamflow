@@ -11,6 +11,9 @@ services:
       - n8n
       - langfuse
     environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=portal
+      NEXTAUTH_URL: ${PORTAL_URL:-http://localhost:3001}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       N8N_API_URL: http://n8n:5678/api/v1
       N8N_EDITOR_URL: ${N8N_URL}
       N8N_API_KEY: ${N8N_API_KEY}
@@ -148,6 +151,8 @@ services:
       N8N_EDITOR_BASE_URL: ${N8N_URL}
       N8N_RUNNERS_ENABLED: "true"
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      # Allow embedding n8n in portal iframe
+      N8N_EDITOR_ALLOW_EMBEDDING: "true"
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
       DB_POSTGRESDB_PORT: 5432
