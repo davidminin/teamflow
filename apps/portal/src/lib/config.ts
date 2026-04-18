@@ -9,6 +9,7 @@ export const portalConfig = {
     process.env.NEXT_PUBLIC_LANGFUSE_URL ||
     process.env.LANGFUSE_URL ||
     "http://localhost:3000",
+  workerApiKey: process.env.WORKER_API_KEY || "",
 };
 
 export function getAuthHeaders() {
