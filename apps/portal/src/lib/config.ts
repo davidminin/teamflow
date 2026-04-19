@@ -11,6 +11,7 @@ export const portalConfig = {
     process.env.NEXT_PUBLIC_LANGFUSE_URL ||
     process.env.LANGFUSE_URL ||
     "http://localhost:3000",
+  workerApiKey: process.env.WORKER_API_KEY || "",
   clickupWebhookSecret: process.env.CLICKUP_WEBHOOK_SECRET || "",
   clickupApiToken: process.env.CLICKUP_API_TOKEN || "",
   clickupListId: process.env.CLICKUP_LIST_ID || "",

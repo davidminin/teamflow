@@ -8,6 +8,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: "📊" },
   { href: "/tasks", label: "Tasks", icon: "📋" },
   { href: "/workflows", label: "Workflows", icon: "⚙️" },
+  { href: "/workers", label: "Workers", icon: "🖥️" },
   { href: "/observability", label: "Observability", icon: "📈" },
   { href: "/teams", label: "Teams", icon: "👥" },
 ];
