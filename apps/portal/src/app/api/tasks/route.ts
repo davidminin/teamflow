@@ -1,116 +1,95 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  createTask,
+  listTasks,
+  getTask,
+  dispatchTask,
+  createAndDispatch,
+  updateTaskResult,
+  clickupEventToTask,
+} from "@/lib/tasks";
 
-const CLICKUP_API = "https://api.clickup.com/api/v2";
+// GET /api/tasks — list all tasks
+export async function GET(request: NextRequest) {
+  const limit = parseInt(request.nextUrl.searchParams.get("limit") || "50", 10);
+  const allTasks = listTasks(limit);
 
-function getConfig() {
-  const token = process.env.CLICKUP_API_TOKEN;
-  const listId = process.env.CLICKUP_LIST_ID;
-  return { token, listId };
-}
-
-function clickupHeaders(token: string) {
-  return {
-    Authorization: token,
-    "Content-Type": "application/json",
+  const summary = {
+    total: allTasks.length,
+    pending: allTasks.filter((t) => t.status === "pending").length,
+    dispatched: allTasks.filter((t) => t.status === "dispatched").length,
+    completed: allTasks.filter((t) => t.status === "completed").length,
+    failed: allTasks.filter((t) => t.status === "failed").length,
   };
+
+  return NextResponse.json({ tasks: allTasks, summary });
 }
 
-// GET /api/tasks — fetch tasks from ClickUp list
-export async function GET() {
-  const { token, listId } = getConfig();
-
-  if (!token || !listId) {
-    return NextResponse.json(
-      {
-        error:
-          "ClickUp not configured. Set CLICKUP_API_TOKEN and CLICKUP_LIST_ID.",
-      },
-      { status: 400 }
-    );
-  }
-
-  try {
-    const response = await fetch(
-      `${CLICKUP_API}/list/${listId}/task?order_by=created&reverse=true&subtasks=true`,
-      {
-        headers: clickupHeaders(token),
-        cache: "no-store",
-      }
-    );
-
-    if (!response.ok) {
-      const text = await response.text();
-      return NextResponse.json(
-        { error: `ClickUp API error: ${response.status} ${text}` },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json({ tasks: data.tasks || [] });
-  } catch (error) {
-    return NextResponse.json(
-      { error: `Unable to connect to ClickUp: ${String(error)}` },
-      { status: 502 }
-    );
-  }
-}
-
-// POST /api/tasks — create a new task in ClickUp
-export async function POST(request: Request) {
-  const { token, listId } = getConfig();
-
-  if (!token || !listId) {
-    return NextResponse.json(
-      {
-        error:
-          "ClickUp not configured. Set CLICKUP_API_TOKEN and CLICKUP_LIST_ID.",
-      },
-      { status: 400 }
-    );
-  }
-
+// POST /api/tasks — create + optionally dispatch a task
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.name || !body.name.trim()) {
+    // Mode 1: Convert a ClickUp event to a task
+    if (body.clickupEvent) {
+      const taskInput = clickupEventToTask(body.clickupEvent);
+      if (!taskInput) {
+        return NextResponse.json(
+          { skipped: true, reason: "Event does not map to a task" },
+          { status: 200 }
+        );
+      }
+      const task = await createAndDispatch(taskInput);
+      return NextResponse.json({ task }, { status: 201 });
+    }
+
+    // Mode 2: Direct task creation
+    const { type, title, requirement, branch, baseBranch, filePaths, dispatch } = body;
+
+    if (!type || !requirement) {
       return NextResponse.json(
-        { error: "Task name is required" },
+        { error: "Missing required fields: type, requirement" },
         { status: 400 }
       );
     }
 
-    const clickupPayload: Record<string, unknown> = {
-      name: body.name.trim(),
-      description: body.description || "",
-      priority: body.priority || 3,
-      tags: body.tags || [],
-      status: "Open",
-    };
-
-    const response = await fetch(`${CLICKUP_API}/list/${listId}/task`, {
-      method: "POST",
-      headers: clickupHeaders(token),
-      body: JSON.stringify(clickupPayload),
+    const task = createTask({
+      type,
+      title: title || requirement.slice(0, 80),
+      requirement,
+      branch,
+      baseBranch,
+      filePaths,
     });
 
-    if (!response.ok) {
-      const text = await response.text();
-      return NextResponse.json(
-        { error: `ClickUp API error: ${response.status} ${text}` },
-        { status: response.status }
-      );
+    // Auto-dispatch if requested (default: true)
+    if (dispatch !== false) {
+      await dispatchTask(task);
     }
 
-    const task = await response.json();
-    return NextResponse.json(
-      { message: "Task created", task },
-      { status: 201 }
-    );
-  } catch (error) {
-    return NextResponse.json(
-      { error: `Failed to create task: ${String(error)}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ task }, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+}
+
+// PATCH /api/tasks — update task result (called by workers via portal)
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { taskId, result, status } = body;
+
+    if (!taskId) {
+      return NextResponse.json({ error: "Missing taskId" }, { status: 400 });
+    }
+
+    const task = updateTaskResult(taskId, result, status || "completed");
+    if (!task) {
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ task });
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 }
