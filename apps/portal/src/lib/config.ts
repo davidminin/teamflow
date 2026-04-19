@@ -5,11 +5,16 @@ export const portalConfig = {
     process.env.N8N_EDITOR_URL ||
     "http://localhost:5678",
   n8nApiKey: process.env.N8N_API_KEY || "",
+  n8nWebhookUrl:
+    process.env.N8N_WEBHOOK_URL || "http://n8n:5678/webhook/clickup-events",
   langfuseUrl:
     process.env.NEXT_PUBLIC_LANGFUSE_URL ||
     process.env.LANGFUSE_URL ||
     "http://localhost:3000",
   workerApiKey: process.env.WORKER_API_KEY || "",
+  clickupWebhookSecret: process.env.CLICKUP_WEBHOOK_SECRET || "",
+  clickupApiToken: process.env.CLICKUP_API_TOKEN || "",
+  clickupListId: process.env.CLICKUP_LIST_ID || "",
 };
 
 export function getAuthHeaders() {

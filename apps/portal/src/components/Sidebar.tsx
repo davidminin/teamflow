@@ -6,10 +6,15 @@ import { signOut, useSession } from "next-auth/react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: "📊" },
+  { href: "/tasks", label: "Tasks", icon: "📋" },
   { href: "/workflows", label: "Workflows", icon: "⚙️" },
   { href: "/workers", label: "Workers", icon: "🖥️" },
   { href: "/observability", label: "Observability", icon: "📈" },
   { href: "/teams", label: "Teams", icon: "👥" },
+];
+
+const bottomNavItems = [
+  { href: "/settings", label: "Settings", icon: "🔧" },
 ];
 
 export default function Sidebar() {
@@ -26,7 +31,31 @@ export default function Sidebar() {
 
       <nav className="flex-1 space-y-1 p-3">
         {navItems.map((item) => {
-          const active = pathname === item.href;
+          const active =
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+                active
+                  ? "bg-zinc-800 text-white"
+                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              }`}
+            >
+              <span>{item.icon}</span>
+              {item.label}
+            </Link>
+          );
+        })}
+
+        <div className="my-3 border-t border-zinc-800/50" />
+
+        {bottomNavItems.map((item) => {
+          const active =
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(item.href));
           return (
             <Link
               key={item.href}
@@ -47,8 +76,12 @@ export default function Sidebar() {
       <div className="border-t border-zinc-800 p-3">
         <div className="flex items-center justify-between">
           <div className="truncate">
-            <p className="truncate text-sm text-white">{session?.user?.name || "User"}</p>
-            <p className="truncate text-xs text-zinc-500">{session?.user?.email}</p>
+            <p className="truncate text-sm text-white">
+              {session?.user?.name || "User"}
+            </p>
+            <p className="truncate text-xs text-zinc-500">
+              {session?.user?.email}
+            </p>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
