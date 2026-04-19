@@ -8,9 +8,15 @@ services:
     container_name: teamflow-portal
     restart: unless-stopped
     depends_on:
-      - n8n
-      - langfuse
+      postgres:
+        condition: service_healthy
+      n8n:
+        condition: service_started
+      langfuse:
+        condition: service_started
     environment:
+      # Next.js standalone defaults PORT to 3000; must match ports mapping below
+      PORT: "3001"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=portal
       NEXTAUTH_URL: ${PORTAL_URL:-http://localhost:3001}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
