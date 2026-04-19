@@ -52,7 +52,60 @@ TeamFlow is a self-hosted platform that combines [n8n](https://n8n.io) workflow 
 | **ClickHouse** | Analytics column store (for Langfuse)  | 8123 |
 | **MinIO**      | S3-compatible object storage           | 9001 |
 
----
+## 💡 Why TeamFlow?
+
+There's no shortage of AI tools that promise to automate your work — managed AI agents, copilots, and SaaS platforms. TeamFlow takes a fundamentally different approach.
+
+### The Core Difference
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     MANAGED AI AGENT                                │
+│                                                                     │
+│  "Do X" ──→  🧠 AI Brain  ──→  figures out steps  ──→  acts        │
+│              (vendor-hosted)    (probabilistic)         (opaque)     │
+│                                                                     │
+│  ✅ Smart, autonomous          ❌ Data leaves your infra            │
+│  ✅ No workflow to design      ❌ Per-seat / per-token pricing      │
+│  ✅ Handles ambiguity          ❌ Black box — hard to audit         │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        TEAMFLOW                                     │
+│                                                                     │
+│  "Do X" ──→  📋 Task  ──→  ⚡ n8n Workflow  ──→  🤖 Your LLMs     │
+│              (ClickUp)      (deterministic)       (Ollama/vLLM)     │
+│                                    │                                │
+│                              📊 Langfuse                            │
+│                             (full traces)                           │
+│                                                                     │
+│  ✅ Self-hosted, your data       ✅ Observable — full LLM traces    │
+│  ✅ Deterministic workflows      ✅ Any LLM — local or cloud        │
+│  ✅ Hardware cost only           ✅ Code-level customization        │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Side by Side
+
+|  | Managed AI Agents | TeamFlow |
+|--|-------------------|----------|
+| **How it works** | AI reasons autonomously, figures out steps on its own | You design workflows visually, LLMs power each step |
+| **Hosting** | Vendor's cloud | Your infrastructure |
+| **Your data** | Sent to third parties | Never leaves your servers |
+| **LLM choice** | Vendor picks (GPT-4, Claude, etc.) | Your choice — Ollama, vLLM, or cloud fallback |
+| **Cost** | Per-seat or per-token | Hardware + electricity |
+| **Reliability** | Probabilistic — AI decides how | Deterministic — workflows run the same way every time |
+| **Observability** | Limited | Full traces, costs, and evals via Langfuse |
+| **Customization** | Prompt engineering | Code-level control over every step |
+
+**Think of it this way:**
+- **Managed AI Agent** = hiring an AI employee — smart, but you don't control how they think or where your data goes
+- **TeamFlow** = building your own AI assembly line — you design every step, pick your own models, and keep full ownership
+
+TeamFlow isn't trying to be an autonomous agent. It's the **self-hosted automation backbone** that lets your team plug in LLMs wherever they add value — with full observability, deterministic reliability, and zero vendor lock-in.
+
+## 🚀 Quickstart
+**Dependencies:** Docker Hub \([Mac](https://docs.docker.com/desktop/setup/install/mac-install/), [Windows](https://docs.docker.com/desktop/setup/install/windows-install)\)
 
 ## Quick Start (Docker)
 
@@ -181,7 +234,14 @@ Tasks tracked in [ClickUp](https://app.clickup.com/90171007544/v/l/2kz9rrhr-357)
 - [ ] Worker registration system
 - [ ] Local LLM integration (Ollama / vLLM)
 
----
+
+| Category | Tools | Roadmap
+| --- | --- | ---
+| Workflow | n8n | |
+| Observability | Langfuse | |
+| Project Management | ClickUp | Jira, Confluence, Asana, Notion |
+| Communication | ClickUp | Slack, Teams |
+| Git Repo | Github | |
 
 ## License
 
