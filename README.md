@@ -1,70 +1,148 @@
-# 🚀 TeamFlow
+# 📱 TeamFlow
 
-**Automate your team's work with open-source LLMs, visual workflows, and full observability.**
+**Develop from your phone for the cost of electricity.**
 
-TeamFlow is a self-hosted platform that combines [n8n](https://n8n.io) workflow automation, [Langfuse](https://langfuse.com) LLM observability, and a Next.js command portal into a single Docker stack. Connect your project management tools, code repos, and communication channels — then let AI workflows handle the repetitive work.
+TeamFlow is a self-hosted platform that turns your phone into a full development environment. Review live previews, give feedback in natural language, and watch AI workers implement your changes — all from a mobile browser. No laptop required.
+
+The stack: [n8n](https://n8n.io) visual workflows, [Langfuse](https://langfuse.com) LLM observability, a Next.js command portal, and local AI workers — all running on your own hardware in a single Docker stack. Connect ClickUp, GitHub, and Slack, then develop by conversation.
 
 > ⚠️ **Early-stage project** — expect rapid iteration and breaking changes.
+
+---
+
+## 💡 Why TeamFlow?
+
+### The Problem
+
+You're away from your desk. You have an idea — a bug fix, a feature tweak, a UI change. Your options:
+
+1. **Wait** until you're back at your laptop
+2. **Try** to code on your phone (good luck)
+3. **Pay** $50+/seat/month for a managed AI agent to do it for you
+
+### The TeamFlow Way
+
+Open your phone → see the live app → type "make the header blue" → watch it happen.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                YOUR PHONE (browser)                      │
+│                                                          │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │         TeamFlow Portal (/preview)                 │  │
+│  │                                                    │  │
+│  │  ┌──────────────────────────────────────────────┐  │  │
+│  │  │                                              │  │  │
+│  │  │          Live Preview (iframe)               │  │  │
+│  │  │          your-app-git-feat-xxx.vercel.app    │  │  │
+│  │  │                                              │  │  │
+│  │  └──────────────────────────────────────────────┘  │  │
+│  │                                                    │  │
+│  │  💬 "move the login button to the right"           │  │
+│  │  ┌──────────────────────────────────┐ [Send]       │  │
+│  │  └──────────────────────────────────┘              │  │
+│  └────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+         │
+         ▼ feedback becomes a requirement
+┌─────────────────────────────────────────────────────────┐
+│  n8n picks up task → dispatches to idle worker →        │
+│  worker reads codebase + requirement → makes change →   │
+│  commits → Vercel rebuilds → preview refreshes →        │
+│  you see the change on your phone                       │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Cost: your electricity bill.** Self-hosted LLMs, your own hardware, no per-seat pricing.
+
+### Side by Side
+
+|  | Managed AI Agent | TeamFlow |
+|--|------------------|----------|
+| **What it costs** | $50-200/seat/month + token costs | Hardware + electricity |
+| **Where it runs** | Vendor's cloud | Your machine |
+| **Your data** | Sent to third parties | Never leaves your servers |
+| **Dev from phone?** | Chat-only — can't see the app | Live preview + feedback in one view |
+| **LLM choice** | Vendor picks | Your choice — Ollama, vLLM, or cloud |
+| **Observability** | Limited | Full traces via Langfuse |
+| **Reliability** | Probabilistic | Deterministic n8n workflows |
+
+**Think of it this way:** other tools give you an AI that *talks about* your code. TeamFlow gives you an AI that *changes* your code while you watch the result live on your phone.
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                Portal (Next.js :3001)                │
-│                                                     │
-│  ┌───────────┐ ┌───────────┐ ┌───────────────────┐ │
-│  │ Dashboard  │ │  Tasks    │ │   Observability   │ │
-│  │ (overview) │ │ (create)  │ │ (Langfuse embed)  │ │
-│  └───────────┘ └───────────┘ └───────────────────┘ │
-│  ┌───────────┐ ┌───────────┐ ┌───────────────────┐ │
-│  │ Workflows │ │   Teams   │ │     Workers       │ │
-│  │(n8n embed)│ │           │ │ (MCP + HTTP)      │ │
-│  └───────────┘ └───────────┘ └───────────────────┘ │
-└──────────────────────┬──────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                Portal (Next.js :3001)                    │
+│                                                          │
+│  ┌───────────┐ ┌───────────┐ ┌────────────────────────┐ │
+│  │ Dashboard  │ │ Preview   │ │   Observability        │ │
+│  │ (overview) │ │ (live app)│ │   (Langfuse embed)     │ │
+│  └───────────┘ └───────────┘ └────────────────────────┘ │
+│  ┌───────────┐ ┌───────────┐ ┌────────────────────────┐ │
+│  │ Workflows │ │  Workers  │ │     Feedback           │ │
+│  │ (n8n)     │ │ (status)  │ │ (chat → requirements)  │ │
+│  └───────────┘ └───────────┘ └────────────────────────┘ │
+└──────────────────────┬───────────────────────────────────┘
                        │
-     ┌─────────────────┼─────────────────┐
-     │                 │                 │
-     ▼                 ▼                 ▼
-┌─────────┐    ┌────────────┐    ┌────────────┐
-│   n8n   │    │  Langfuse  │    │  Postgres  │
-│  :5678  │    │   :3000    │    │   :5432    │
-└────┬────┘    └────────────┘    └────────────┘
+     ┌─────────────────┼──────────────────┐
+     │                 │                  │
+     ▼                 ▼                  ▼
+┌─────────┐    ┌────────────┐     ┌────────────┐
+│   n8n   │    │  Langfuse  │     │  Postgres  │
+│  :5678  │    │   :3000    │     │   :5432    │
+└────┬────┘    └────────────┘     └────────────┘
      │               │
-     ▼         ┌─────┴─────┐
-┌─────────┐    ▼           ▼
+     ▼         ┌─────┴──────┐
+┌─────────┐    ▼            ▼
 │  Redis  │  ┌──────────┐ ┌──────────┐
 │  :6379  │  │ClickHouse│ │  MinIO   │
 └─────────┘  │  :8123   │ │  :9001   │
              └──────────┘ └──────────┘
 
-┌─────────────────────────────────────────────────────┐
-│              Local Worker (your PC)                  │
-│                                                     │
-│  ┌───────────────────────────────────────────────┐  │
-│  │           MCP Server (stdio)                  │  │
-│  │                                               │  │
-│  │  Tools: list_tasks · claim_task · get_task    │  │
-│  │         create_branch · create_pr             │  │
-│  │         complete_task · add_comment           │  │
-│  │                                               │  │
-│  │  Resources: teamflow://backlog                │  │
-│  │  Prompts:   implement-ticket                  │  │
-│  └──────────────────┬────────────────────────────┘  │
-│                     │                               │
-│  ┌──────────┐  ┌────┴─────┐  ┌──────────────────┐  │
-│  │  Cursor  │──│ ClickUp  │  │  HTTP Worker      │  │
-│  │  (IDE)   │  │  GitHub   │  │  (n8n dispatch)  │  │
-│  └──────────┘  └──────────┘  └──────────────────┘  │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│              Local Worker (your PC / server)             │
+│                                                          │
+│  ┌───────────────────────────────────────────────────┐   │
+│  │           MCP Server (stdio)                      │   │
+│  │                                                   │   │
+│  │  Tools: list_tasks · claim_task · get_task        │   │
+│  │         create_branch · create_pr                 │   │
+│  │         complete_task · add_comment               │   │
+│  │                                                   │   │
+│  │  Resources: teamflow://backlog                    │   │
+│  │  Prompts:   implement-ticket                      │   │
+│  └──────────────────┬────────────────────────────────┘   │
+│                     │                                    │
+│  ┌──────────┐  ┌────┴─────┐  ┌───────────────────────┐  │
+│  │  Cursor  │──│ ClickUp  │  │  HTTP Worker           │  │
+│  │  (IDE)   │  │  GitHub  │  │  (n8n task dispatch)   │  │
+│  └──────────┘  └──────────┘  └───────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
 ```
+
+### The Phone Dev Loop
+
+```
+1. You open /preview on your phone
+2. Live app loads in iframe (Vercel preview deployment)
+3. You tap the feedback button: "make the sidebar wider"
+4. Feedback → ClickUp task tagged to current branch
+5. n8n workflow detects new task → dispatches to idle worker
+6. Worker reads codebase + requirement → commits fix
+7. Vercel rebuilds preview → portal refreshes iframe
+8. You see the change — give more feedback or approve
+```
+
+---
 
 ## Stack
 
 | Service        | Purpose                                | Port |
 | -------------- | -------------------------------------- | ---- |
-| **Portal**     | Web UI — dashboard, tasks, auth        | 3001 |
+| **Portal**     | Web UI — dashboard, preview, feedback  | 3001 |
 | **n8n**        | Visual workflow automation engine       | 5678 |
 | **Langfuse**   | LLM observability, tracing, analytics  | 3000 |
 | **PostgreSQL** | Shared database (separate schemas)     | 5432 |
@@ -136,60 +214,6 @@ npm run mcp:dev    # stdio mode + file watching
 
 ---
 
-## 💡 Why TeamFlow?
-
-There's no shortage of AI tools that promise to automate your work — managed AI agents, copilots, and SaaS platforms. TeamFlow takes a fundamentally different approach.
-
-### The Core Difference
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     MANAGED AI AGENT                                │
-│                                                                     │
-│  "Do X" ──→  🧠 AI Brain  ──→  figures out steps  ──→  acts        │
-│              (vendor-hosted)    (probabilistic)         (opaque)     │
-│                                                                     │
-│  ✅ Smart, autonomous          ❌ Data leaves your infra            │
-│  ✅ No workflow to design      ❌ Per-seat / per-token pricing      │
-│  ✅ Handles ambiguity          ❌ Black box — hard to audit         │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                        TEAMFLOW                                     │
-│                                                                     │
-│  "Do X" ──→  📋 Task  ──→  ⚡ n8n Workflow  ──→  🤖 Your LLMs     │
-│              (ClickUp)      (deterministic)       (Ollama/vLLM)     │
-│                                    │                                │
-│                              📊 Langfuse                            │
-│                             (full traces)                           │
-│                                                                     │
-│  ✅ Self-hosted, your data       ✅ Observable — full LLM traces    │
-│  ✅ Deterministic workflows      ✅ Any LLM — local or cloud        │
-│  ✅ Hardware cost only           ✅ Code-level customization        │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Side by Side
-
-|  | Managed AI Agents | TeamFlow |
-|--|-------------------|----------|
-| **How it works** | AI reasons autonomously, figures out steps on its own | You design workflows visually, LLMs power each step |
-| **Hosting** | Vendor's cloud | Your infrastructure |
-| **Your data** | Sent to third parties | Never leaves your servers |
-| **LLM choice** | Vendor picks (GPT-4, Claude, etc.) | Your choice — Ollama, vLLM, or cloud fallback |
-| **Cost** | Per-seat or per-token | Hardware + electricity |
-| **Reliability** | Probabilistic — AI decides how | Deterministic — workflows run the same way every time |
-| **Observability** | Limited | Full traces, costs, and evals via Langfuse |
-| **Customization** | Prompt engineering | Code-level control over every step |
-
-**Think of it this way:**
-- **Managed AI Agent** = hiring an AI employee — smart, but you don't control how they think or where your data goes
-- **TeamFlow** = building your own AI assembly line — you design every step, pick your own models, and keep full ownership
-
-TeamFlow isn't trying to be an autonomous agent. It's the **self-hosted automation backbone** that lets your team plug in LLMs wherever they add value — with full observability, deterministic reliability, and zero vendor lock-in.
-
----
-
 ## 🚀 Quickstart
 
 **Dependencies:** [Docker Desktop](https://docs.docker.com/desktop/) and Node.js 22+
@@ -223,7 +247,7 @@ Register an account in the Portal, then sign in to access the dashboard.
 
 ## Preview Deployments (Vercel)
 
-Every pull request gets a unique preview URL — review UI changes from your phone or any device.
+Every pull request gets a unique preview URL — review UI changes from your phone or any device. This is the foundation of the phone dev loop.
 
 ### One-time Setup (2 minutes)
 
@@ -313,10 +337,14 @@ Tasks tracked in [ClickUp](https://app.clickup.com/90171007544/v/l/2kz9rrhr-357)
 - [x] Vercel preview deployments
 - [x] Task creation form → ClickUp integration
 - [x] ClickUp → n8n webhook connector
-- [x] Worker registration system
+- [x] Worker registration system (heartbeat, dispatch, dashboard)
 - [x] MCP server for Cursor / Claude Desktop
+- [ ] **Preview embed + feedback widget (phone dev loop)**
+- [ ] **Feedback → code workflow (n8n → worker → commit → rebuild)**
 - [ ] Slack bot entry point
 - [ ] Local LLM integration (Ollama / vLLM)
+- [ ] Branch switcher in preview page
+- [ ] Vercel deploy webhook listener (auto-refresh preview)
 
 
 | Category | Tools | Roadmap
@@ -327,6 +355,7 @@ Tasks tracked in [ClickUp](https://app.clickup.com/90171007544/v/l/2kz9rrhr-357)
 | Communication | Slack | Teams |
 | Code | GitHub + MCP | |
 | Local AI | Cursor MCP | Ollama, vLLM |
+| Phone Dev | Portal preview + feedback | |
 
 ## License
 
