@@ -12,6 +12,8 @@ export const portalConfig = {
     process.env.LANGFUSE_URL ||
     "http://localhost:3000",
   clickupWebhookSecret: process.env.CLICKUP_WEBHOOK_SECRET || "",
+  clickupApiToken: process.env.CLICKUP_API_TOKEN || "",
+  clickupListId: process.env.CLICKUP_LIST_ID || "",
 };
 
 export function getAuthHeaders() {
