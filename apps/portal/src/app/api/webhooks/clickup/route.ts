@@ -4,6 +4,7 @@ import {
   forwardToN8n,
   type ClickUpWebhookPayload,
 } from "@/lib/webhooks";
+import { clickupEventToTask, createAndDispatch } from "@/lib/tasks";
 
 function getWebhookConfig() {
   return {
@@ -11,88 +12,77 @@ function getWebhookConfig() {
     n8nWebhookUrl:
       process.env.N8N_WEBHOOK_URL ||
       "http://n8n:5678/webhook/clickup-events",
+    autoDispatch: process.env.CLICKUP_AUTO_DISPATCH !== "false",
   };
 }
 
 // POST /api/webhooks/clickup — receive ClickUp webhook events
 export async function POST(request: Request) {
-  const { secret, n8nWebhookUrl } = getWebhookConfig();
+  const { secret, n8nWebhookUrl, autoDispatch } = getWebhookConfig();
 
-  // Read raw body for signature verification
   const rawBody = await request.text();
-
-  // Verify signature if a secret is configured
-  if (secret) {
-    const signature = request.headers.get("x-signature") || "";
-    if (!signature) {
-      return NextResponse.json(
-        { error: "Missing X-Signature header" },
-        { status: 401 }
-      );
-    }
-    if (!verifyClickUpSignature(rawBody, signature, secret)) {
-      return NextResponse.json(
-        { error: "Invalid webhook signature" },
-        { status: 401 }
-      );
-    }
-  }
-
-  // Parse the payload
   let payload: ClickUpWebhookPayload;
+
   try {
     payload = JSON.parse(rawBody);
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (!payload.event || !payload.webhook_id) {
-    return NextResponse.json(
-      { error: "Missing required fields: event, webhook_id" },
-      { status: 400 }
-    );
+  // Verify signature if secret is configured
+  if (secret) {
+    const signature = request.headers.get("x-signature") || "";
+    if (!verifyClickUpSignature(rawBody, signature, secret)) {
+      console.warn(`[webhook] Invalid ClickUp signature for event: ${payload.event}`);
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
   }
 
-  // Forward to n8n
-  const result = await forwardToN8n(n8nWebhookUrl, payload);
+  console.log(`[webhook] ClickUp event: ${payload.event} (task: ${payload.task_id || "n/a"})`);
 
-  if (!result.success) {
-    console.error(
-      `[webhook] Failed to forward ${payload.event} to n8n:`,
-      result.error
-    );
-    // Still return 200 to ClickUp so it doesn't retry endlessly.
-    // The portal logs the error for debugging.
-    return NextResponse.json({
-      received: true,
-      forwarded: false,
-      event: payload.event,
-      error: result.error,
-    });
+  // 1. Forward to n8n (existing behavior)
+  const n8nResult = await forwardToN8n(n8nWebhookUrl, payload);
+
+  // 2. Auto-dispatch to workers if enabled
+  let taskResult = null;
+  if (autoDispatch) {
+    const taskInput = clickupEventToTask(payload);
+    if (taskInput) {
+      try {
+        const task = await createAndDispatch(taskInput);
+        taskResult = {
+          dispatched: true,
+          taskId: task.id,
+          status: task.status,
+        };
+        console.log(`[webhook] Auto-dispatched task ${task.id} (${task.type})`);
+      } catch (err) {
+        taskResult = {
+          dispatched: false,
+          error: (err as Error).message,
+        };
+        console.error(`[webhook] Auto-dispatch failed:`, (err as Error).message);
+      }
+    }
   }
-
-  console.log(
-    `[webhook] Forwarded ${payload.event} (task=${payload.task_id || "n/a"}) → n8n`
-  );
 
   return NextResponse.json({
     received: true,
-    forwarded: true,
     event: payload.event,
+    task_id: payload.task_id,
+    n8n: n8nResult,
+    autoDispatch: taskResult,
+    timestamp: new Date().toISOString(),
   });
 }
 
-// GET /api/webhooks/clickup — health check / info
+// GET /api/webhooks/clickup — health check
 export async function GET() {
-  const { secret, n8nWebhookUrl } = getWebhookConfig();
-
+  const { n8nWebhookUrl, autoDispatch } = getWebhookConfig();
   return NextResponse.json({
-    status: "ok",
-    endpoint: "/api/webhooks/clickup",
-    signatureVerification: secret ? "enabled" : "disabled",
-    n8nTarget: n8nWebhookUrl ? "configured" : "not configured",
+    status: "ready",
+    n8nWebhookUrl,
+    autoDispatch,
+    hasSecret: !!getWebhookConfig().secret,
   });
 }

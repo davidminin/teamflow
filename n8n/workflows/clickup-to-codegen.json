@@ -1,0 +1,152 @@
+{
+  "name": "TeamFlow: ClickUp → Code Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clickup-events",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      },
+      "id": "webhook-trigger",
+      "name": "ClickUp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "event-filter",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "taskStatusUpdated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        }
+      },
+      "id": "filter-events",
+      "name": "Filter: Status Changed",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check if the task was moved to 'in progress'\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const event = item.json;\n  const historyItems = event.history_items || [];\n  const statusChange = historyItems.find(h => h.field === 'status');\n  \n  if (statusChange) {\n    const newStatus = String(statusChange.after?.status || statusChange.after || '').toLowerCase();\n    if (newStatus === 'in progress' || newStatus === 'in_progress') {\n      results.push({\n        json: {\n          task_id: event.task_id,\n          event: event.event,\n          new_status: newStatus,\n          webhook_id: event.webhook_id,\n          should_dispatch: true\n        }\n      });\n    }\n  }\n}\n\nreturn results.length > 0 ? results : [{ json: { should_dispatch: false } }];"
+      },
+      "id": "check-status",
+      "name": "Check: In Progress?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "dispatch-check",
+              "leftValue": "={{ $json.should_dispatch }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "filter-dispatch",
+      "name": "Should Dispatch?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.PORTAL_URL || 'http://portal:3001' }}/api/tasks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"clickupEvent\": {\n    \"event\": \"{{ $json.event }}\",\n    \"task_id\": \"{{ $json.task_id }}\",\n    \"history_items\": [{ \"field\": \"status\", \"after\": \"{{ $json.new_status }}\" }]\n  }\n}"
+      },
+      "id": "dispatch-task",
+      "name": "Dispatch to Portal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log the result for Langfuse tracing\nconst item = $input.first();\nconst response = item.json;\n\nconsole.log(`[TeamFlow] Task dispatched:`, JSON.stringify(response, null, 2));\n\nreturn [{\n  json: {\n    success: true,\n    task: response.task,\n    dispatched_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "log-result",
+      "name": "Log Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "ClickUp Webhook": {
+      "main": [
+        [{ "node": "Filter: Status Changed", "type": "main", "index": 0 }]
+      ]
+    },
+    "Filter: Status Changed": {
+      "main": [
+        [{ "node": "Check: In Progress?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check: In Progress?": {
+      "main": [
+        [{ "node": "Should Dispatch?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Should Dispatch?": {
+      "main": [
+        [{ "node": "Dispatch to Portal", "type": "main", "index": 0 }]
+      ]
+    },
+    "Dispatch to Portal": {
+      "main": [
+        [{ "node": "Log Result", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "teamflow" },
+    { "name": "automation" }
+  ]
+}
