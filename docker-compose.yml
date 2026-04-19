@@ -17,6 +17,8 @@ services:
       N8N_API_URL: http://n8n:5678/api/v1
       N8N_EDITOR_URL: ${N8N_URL}
       N8N_API_KEY: ${N8N_API_KEY}
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook/clickup-events
+      CLICKUP_WEBHOOK_SECRET: ${CLICKUP_WEBHOOK_SECRET:-}
       LANGFUSE_URL: ${LANGFUSE_URL}
     ports:
       - "3001:3001"
