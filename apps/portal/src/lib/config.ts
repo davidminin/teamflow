@@ -15,6 +15,19 @@ export const portalConfig = {
   clickupWebhookSecret: process.env.CLICKUP_WEBHOOK_SECRET || "",
   clickupApiToken: process.env.CLICKUP_API_TOKEN || "",
   clickupListId: process.env.CLICKUP_LIST_ID || "",
+
+  // LLM Providers
+  ollamaUrl: process.env.OLLAMA_URL || "",
+  ollamaModel: process.env.OLLAMA_MODEL || "llama3.1:8b",
+  llmApiUrl: process.env.LLM_API_URL || "",
+  llmApiKey: process.env.LLM_API_KEY || "",
+  llmModel: process.env.LLM_MODEL || "",
+  llmProviderName: process.env.LLM_PROVIDER_NAME || "OpenAI-Compatible",
+  openaiApiKey: process.env.OPENAI_API_KEY || "",
+  openaiModel: process.env.OPENAI_MODEL || "gpt-4o-mini",
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || "",
+  anthropicModel: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514",
+  llmCloudFallback: process.env.LLM_CLOUD_FALLBACK !== "false",
 };
 
 export function getAuthHeaders() {
