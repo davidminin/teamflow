@@ -18,10 +18,10 @@ TeamFlow is a self-hosted platform that combines [n8n](https://n8n.io) workflow 
 │  │ Dashboard  │ │  Tasks    │ │   Observability   │ │
 │  │ (overview) │ │ (create)  │ │ (Langfuse embed)  │ │
 │  └───────────┘ └───────────┘ └───────────────────┘ │
-│  ┌───────────┐ ┌───────────┐                       │
-│  │ Workflows │ │   Teams   │  Auth: NextAuth (JWT) │
-│  │(n8n embed)│ │           │  DB:   Prisma + PG    │
-│  └───────────┘ └───────────┘                       │
+│  ┌───────────┐ ┌───────────┐ ┌───────────────────┐ │
+│  │ Workflows │ │   Teams   │ │     Workers       │ │
+│  │(n8n embed)│ │           │ │ (MCP + HTTP)      │ │
+│  └───────────┘ └───────────┘ └───────────────────┘ │
 └──────────────────────┬──────────────────────────────┘
                        │
      ┌─────────────────┼─────────────────┐
@@ -30,14 +30,34 @@ TeamFlow is a self-hosted platform that combines [n8n](https://n8n.io) workflow 
 ┌─────────┐    ┌────────────┐    ┌────────────┐
 │   n8n   │    │  Langfuse  │    │  Postgres  │
 │  :5678  │    │   :3000    │    │   :5432    │
-└─────────┘    └────────────┘    └────────────┘
-                     │
-             ┌───────┴───────┐
-             ▼               ▼
-       ┌──────────┐   ┌──────────┐
-       │ClickHouse│   │  MinIO   │
-       │  :8123   │   │  :9001   │
-       └──────────┘   └──────────┘
+└────┬────┘    └────────────┘    └────────────┘
+     │               │
+     ▼         ┌─────┴─────┐
+┌─────────┐    ▼           ▼
+│  Redis  │  ┌──────────┐ ┌──────────┐
+│  :6379  │  │ClickHouse│ │  MinIO   │
+└─────────┘  │  :8123   │ │  :9001   │
+             └──────────┘ └──────────┘
+
+┌─────────────────────────────────────────────────────┐
+│              Local Worker (your PC)                  │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐  │
+│  │           MCP Server (stdio)                  │  │
+│  │                                               │  │
+│  │  Tools: list_tasks · claim_task · get_task    │  │
+│  │         create_branch · create_pr             │  │
+│  │         complete_task · add_comment           │  │
+│  │                                               │  │
+│  │  Resources: teamflow://backlog                │  │
+│  │  Prompts:   implement-ticket                  │  │
+│  └──────────────────┬────────────────────────────┘  │
+│                     │                               │
+│  ┌──────────┐  ┌────┴─────┐  ┌──────────────────┐  │
+│  │  Cursor  │──│ ClickUp  │  │  HTTP Worker      │  │
+│  │  (IDE)   │  │  GitHub   │  │  (n8n dispatch)  │  │
+│  └──────────┘  └──────────┘  └──────────────────┘  │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## Stack
@@ -51,6 +71,70 @@ TeamFlow is a self-hosted platform that combines [n8n](https://n8n.io) workflow 
 | **Redis**      | Queue & caching                        | 6379 |
 | **ClickHouse** | Analytics column store (for Langfuse)  | 8123 |
 | **MinIO**      | S3-compatible object storage           | 9001 |
+| **Worker**     | Local MCP server + HTTP task agent     | 9800 |
+
+---
+
+## 🔌 MCP Integration (Cursor / Claude Desktop)
+
+TeamFlow ships with a local MCP server that connects your IDE directly to your ClickUp tasks and GitHub repos. No browser switching — claim a ticket, implement it, and submit a PR all from your editor.
+
+### Quick Setup
+
+```bash
+# 1. Install worker dependencies
+cd worker && npm install
+
+# 2. Copy and fill env vars
+cp .env.example .env
+# Set CLICKUP_API_TOKEN, CLICKUP_LIST_ID, GITHUB_TOKEN, etc.
+
+# 3. Cursor will auto-detect .cursor/mcp.json — just restart Cursor!
+```
+
+### Available MCP Tools
+
+| Tool                 | Description                                                    |
+| -------------------- | -------------------------------------------------------------- |
+| `list_tasks`         | List tasks from ClickUp (filter by status)                     |
+| `get_task`           | Get full task details, description, and comments               |
+| `claim_task`         | Assign to yourself, set "in progress", create a git branch     |
+| `update_task_status` | Change task status (to do / in progress / complete)            |
+| `add_comment`        | Post a comment on any ClickUp task                             |
+| `complete_task`      | Mark done, attach PR link, update portal                       |
+| `create_branch`      | Create a feature branch from main                              |
+| `create_pr`          | Open a pull request on GitHub                                  |
+| `list_kb`            | Browse Knowledge Base articles in ClickUp                      |
+
+### Workflow Example
+
+```
+You → Cursor:  "Show me available tasks"
+Cursor → MCP:  list_tasks(status: "to do")
+MCP → ClickUp: GET /list/{id}/task?statuses[]=to do
+
+You → Cursor:  "Claim the auth refactor task"
+Cursor → MCP:  claim_task(task_id: "86e0yp09t", create_branch: true)
+MCP → ClickUp: PUT /task/86e0yp09t { status: "in progress", assignees: [...] }
+MCP → GitHub:  POST /repos/.../git/refs { ref: "feat/86e0yp09t-auth-refactor" }
+
+You → Cursor:  "Implement this task" (uses implement-ticket prompt)
+Cursor → AI:   [reads task description, comments, KB context, implements]
+
+You → Cursor:  "Create a PR and mark the task done"
+Cursor → MCP:  create_pr(title: "...", head: "feat/86e0yp09t-auth-refactor")
+Cursor → MCP:  complete_task(task_id: "86e0yp09t", pr_url: "https://...")
+```
+
+### Manual MCP Server (for testing)
+
+```bash
+cd worker
+npm run mcp        # stdio mode (for MCP clients)
+npm run mcp:dev    # stdio mode + file watching
+```
+
+---
 
 ## 💡 Why TeamFlow?
 
@@ -104,12 +188,11 @@ There's no shortage of AI tools that promise to automate your work — managed A
 
 TeamFlow isn't trying to be an autonomous agent. It's the **self-hosted automation backbone** that lets your team plug in LLMs wherever they add value — with full observability, deterministic reliability, and zero vendor lock-in.
 
+---
+
 ## 🚀 Quickstart
-**Dependencies:** Docker Hub \([Mac](https://docs.docker.com/desktop/setup/install/mac-install/), [Windows](https://docs.docker.com/desktop/setup/install/windows-install)\)
 
-## Quick Start (Docker)
-
-**Requirements:** [Docker Desktop](https://docs.docker.com/desktop/) and Node.js 22+
+**Dependencies:** [Docker Desktop](https://docs.docker.com/desktop/) and Node.js 22+
 
 ```bash
 # 1. Clone & configure
@@ -228,10 +311,11 @@ Tasks tracked in [ClickUp](https://app.clickup.com/90171007544/v/l/2kz9rrhr-357)
 - [x] Dashboard with department & team overview
 - [x] Embedded n8n & Langfuse with graceful degradation
 - [x] Vercel preview deployments
-- [ ] Task creation form → ClickUp integration
-- [ ] ClickUp → n8n webhook connector
+- [x] Task creation form → ClickUp integration
+- [x] ClickUp → n8n webhook connector
+- [x] Worker registration system
+- [x] MCP server for Cursor / Claude Desktop
 - [ ] Slack bot entry point
-- [ ] Worker registration system
 - [ ] Local LLM integration (Ollama / vLLM)
 
 
@@ -240,8 +324,9 @@ Tasks tracked in [ClickUp](https://app.clickup.com/90171007544/v/l/2kz9rrhr-357)
 | Workflow | n8n | |
 | Observability | Langfuse | |
 | Project Management | ClickUp | Jira, Confluence, Asana, Notion |
-| Communication | ClickUp | Slack, Teams |
-| Git Repo | Github | |
+| Communication | Slack | Teams |
+| Code | GitHub + MCP | |
+| Local AI | Cursor MCP | Ollama, vLLM |
 
 ## License
 
