@@ -12,6 +12,10 @@ const navItems = [
   { href: "/teams", label: "Teams", icon: "👥" },
 ];
 
+const bottomNavItems = [
+  { href: "/settings", label: "Settings", icon: "🔧" },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -26,6 +30,28 @@ export default function Sidebar() {
 
       <nav className="flex-1 space-y-1 p-3">
         {navItems.map((item) => {
+          const active =
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+                active
+                  ? "bg-zinc-800 text-white"
+                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              }`}
+            >
+              <span>{item.icon}</span>
+              {item.label}
+            </Link>
+          );
+        })}
+
+        <div className="my-3 border-t border-zinc-800/50" />
+
+        {bottomNavItems.map((item) => {
           const active =
             pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href));
