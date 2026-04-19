@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "teamflow": {
+      "command": "npx",
+      "args": ["tsx", "worker/src/mcp-server.ts"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "CLICKUP_API_TOKEN": "${env:CLICKUP_API_TOKEN}",
+        "CLICKUP_LIST_ID": "${env:CLICKUP_LIST_ID}",
+        "CLICKUP_USER_ID": "${env:CLICKUP_USER_ID}",
+        "CLICKUP_KB_LIST_ID": "${env:CLICKUP_KB_LIST_ID}",
+        "GITHUB_TOKEN": "${env:GITHUB_TOKEN}",
+        "GITHUB_OWNER": "davidminin",
+        "GITHUB_REPO": "teamflow"
+      }
+    }
+  }
+}
