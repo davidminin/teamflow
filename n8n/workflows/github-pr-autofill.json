@@ -1,0 +1,375 @@
+{
+  "name": "GitHub PR Autofill (AI Draft)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "github-pr-opened",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "id": "github-webhook",
+      "name": "GitHub Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "webhookId": "github-pr-opened"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || {};\nconst sig = $json.headers?.['x-hub-signature-256'] || '';\nconst event = $json.headers?.['x-github-event'] || '';\n\nif (event !== 'pull_request') {\n  return [{ json: { skip: true, reason: 'Not a pull_request event' } }];\n}\n\nconst action = body.action;\nif (!['opened', 'reopened', 'ready_for_review'].includes(action)) {\n  return [{ json: { skip: true, reason: `Ignored action: ${action}` } }];\n}\n\nconst secret = $env.GITHUB_WEBHOOK_SECRET;\nif (!secret) {\n  return [{ json: { skip: true, reason: 'GITHUB_WEBHOOK_SECRET not configured' } }];\n}\n\nconst crypto = require('crypto');\nconst payload = JSON.stringify(body);\nconst expected = `sha256=${crypto.createHmac('sha256', secret).update(payload).digest('hex')}`;\nif (!sig || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {\n  return [{ json: { skip: true, reason: 'Invalid webhook signature' } }];\n}\n\nconst pr = body.pull_request || {};\nconst repo = body.repository || {};\nreturn [{\n  json: {\n    skip: false,\n    owner: repo.owner?.login,\n    repo: repo.name,\n    pr_number: pr.number,\n    pr_title: pr.title || '',\n    pr_body: pr.body || '',\n    commits_url: pr.commits_url,\n    files_url: pr.url + '/files',\n    issue_url: pr.issue_url,\n    compare_url: pr.diff_url\n  }\n}];"
+      },
+      "id": "validate-and-extract",
+      "name": "Validate Signature + Extract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "skip-check",
+      "name": "Skip?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.commits_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.GITHUB_TOKEN}}"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-commits",
+      "name": "Get PR Commits",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        940,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.files_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.GITHUB_TOKEN}}"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-files",
+      "name": "Get PR Files",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        940,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "position",
+        "options": {}
+      },
+      "id": "merge-pr-data",
+      "name": "Merge Commits + Files",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $('Validate Signature + Extract').first().json;\nconst commits = Array.isArray($json) ? $json : [];\nconst filesInput = $('Get PR Files').first().json;\nconst files = Array.isArray(filesInput) ? filesInput : [];\n\nconst commitMessages = commits\n  .map(c => c?.commit?.message)\n  .filter(Boolean)\n  .slice(0, 20)\n  .join('\\n- ');\n\nconst fileNames = files\n  .map(f => f.filename)\n  .filter(Boolean)\n  .slice(0, 120)\n  .join('\\n- ');\n\nconst patchText = files\n  .map(f => `FILE: ${f.filename}\\n${f.patch || ''}`)\n  .join('\\n\\n')\n  .slice(0, 22000);\n\nconst prompt = [\n  'Generate a concise PR body in Markdown with EXACT headings:',\n  '## Context',\n  '## What Changed',\n  '## Why This Approach',\n  '## Impact',\n  '## AI Usage',\n  '## Risks and Rollback',\n  '## Follow-ups',\n  '',\n  'Rules:',\n  '- Max 300 words.',\n  '- Use only provided evidence.',\n  '- If unknown, say: Not enough signal from diff.',\n  '- Mention AI draft and human review in AI Usage.',\n  '',\n  `PR Title: ${source.pr_title}`,\n  `Existing PR Body: ${source.pr_body || '(empty)'}`,\n  `Commit Messages:\\n- ${commitMessages || '(none)'}`,\n  `Changed Files:\\n- ${fileNames || '(none)'}`,\n  `Unified Diff (truncated):\\n${patchText || '(none)'}`\n].join('\\n');\n\nreturn [{\n  json: {\n    owner: source.owner,\n    repo: source.repo,\n    pr_number: source.pr_number,\n    prompt\n  }\n}];"
+      },
+      "id": "build-prompt",
+      "name": "Build AI Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.OPENAI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"{{$env.PR_AUTOFILL_MODEL || 'gpt-4o-mini'}}\",\n  \"temperature\": 0.2,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a senior software engineer writing PR descriptions. Be accurate and concise.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{$json.prompt}}\"\n    }\n  ]\n}"
+      },
+      "id": "generate-pr-body",
+      "name": "Generate PR Body",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const meta = $('Build AI Prompt').first().json;\nconst text = $json.choices?.[0]?.message?.content?.trim();\nif (!text) {\n  return [{ json: { ...meta, skip: true, reason: 'No model output' } }];\n}\n\nreturn [{\n  json: {\n    ...meta,\n    body: text\n  }\n}];"
+      },
+      "id": "extract-body",
+      "name": "Extract Draft Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1820,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.github.com/repos/{{$json.owner}}/{{$json.repo}}/pulls/{{$json.pr_number}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.GITHUB_TOKEN}}"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"body\": {{$json.body}}\n}"
+      },
+      "id": "update-pr",
+      "name": "Update PR Body",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2040,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## GitHub PR Autofill (AI Draft)\n\nLow-cost PR body drafting without GitHub Actions.\n\n### Setup\n1. Import this workflow in n8n.\n2. Configure env vars in `.env`:\n   - `GITHUB_WEBHOOK_SECRET`\n   - `GITHUB_TOKEN`\n   - `OPENAI_API_KEY`\n   - `PR_AUTOFILL_MODEL` (optional)\n3. In GitHub repo settings → Webhooks, set payload URL:\n   `http://<your-n8n-host>:5678/webhook/github-pr-opened`\n4. Enable only `Pull requests` events.\n\n### Notes\n- Triggered only for `opened`, `reopened`, `ready_for_review`.\n- CI remains the source of truth for checks.\n- AI output is a draft and should be reviewed.",
+        "height": 380,
+        "width": 420
+      },
+      "id": "sticky-note",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        200,
+        -120
+      ]
+    }
+  ],
+  "connections": {
+    "GitHub Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Signature + Extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Signature + Extract": {
+      "main": [
+        [
+          {
+            "node": "Skip?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get PR Commits",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get PR Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get PR Commits": {
+      "main": [
+        [
+          {
+            "node": "Merge Commits + Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get PR Files": {
+      "main": [
+        [
+          {
+            "node": "Merge Commits + Files",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Commits + Files": {
+      "main": [
+        [
+          {
+            "node": "Build AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build AI Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate PR Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate PR Body": {
+      "main": [
+        [
+          {
+            "node": "Extract Draft Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Draft Body": {
+      "main": [
+        [
+          {
+            "node": "Update PR Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "github"
+    },
+    {
+      "name": "n8n"
+    },
+    {
+      "name": "automation"
+    }
+  ],
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "teamflow"
+  }
+}

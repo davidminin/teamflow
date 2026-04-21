@@ -24,6 +24,13 @@ export interface TaskPayload {
   payload: Record<string, unknown>;
 }
 
+export function validateWorkerApiKey(request: Request): boolean {
+  const requiredApiKey = process.env.WORKER_API_KEY || "";
+  if (!requiredApiKey) return true;
+  const providedApiKey = request.headers.get("x-worker-api-key") || "";
+  return providedApiKey === requiredApiKey;
+}
+
 // In-memory store
 const workers = new Map<string, Worker>();
 
@@ -86,17 +93,22 @@ export function removeWorker(id: string): boolean {
   return workers.delete(id);
 }
 
-export function heartbeat(id: string): Worker | undefined {
+export function heartbeat(
+  id: string,
+  status?: "idle" | "busy"
+): Worker | undefined {
   const worker = workers.get(id);
   if (!worker) return undefined;
   worker.lastHeartbeat = Date.now();
+  if (status) worker.status = status;
   if (worker.status === "offline") worker.status = "idle";
   return { ...worker, status: resolveStatus(worker) };
 }
 
 export function updateWorkerStatus(
   id: string,
-  status: "idle" | "busy"
+  status: "idle" | "busy",
+  _currentTask?: string
 ): Worker | undefined {
   const worker = workers.get(id);
   if (!worker) return undefined;

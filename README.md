@@ -165,7 +165,7 @@ cd worker && npm install
 
 # 2. Copy and fill env vars
 cp .env.example .env
-# Set CLICKUP_API_TOKEN, CLICKUP_LIST_ID, GITHUB_TOKEN, etc.
+# Set CLICKUP_API_TOKEN, CLICKUP_LIST_ID, GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO, etc.
 
 # 3. Cursor will auto-detect .cursor/mcp.json — just restart Cursor!
 ```
@@ -219,6 +219,9 @@ npm run mcp:dev    # stdio mode + file watching
 **Dependencies:** [Docker Desktop](https://docs.docker.com/desktop/) and Node.js 22+
 
 ```bash
+# 0. Use required Node version (from .nvmrc)
+nvm use
+
 # 1. Clone & configure
 git clone git@github.com:davidminin/teamflow.git
 cd teamflow
@@ -229,9 +232,19 @@ cp .env.example .env
 # 2. Bootstrap team structure
 npm run bootstrap -- --departments "qa,eng,ops" --create-default-teams
 
-# 3. Start the stack
+# 3. Ensure Docker daemon is running (macOS)
+open -a Docker
+until docker info >/dev/null 2>&1; do sleep 1; done
+
+# Linux alternative:
+# sudo systemctl start docker
+# until docker info >/dev/null 2>&1; do sleep 1; done
+
+# 4. Start the stack
 docker compose up -d
 ```
+
+If Docker is not running, `docker compose up -d` fails with a daemon socket error. Start Docker Desktop first.
 
 Then open:
 
@@ -242,6 +255,42 @@ Then open:
 | **Langfuse** | http://localhost:3000        |
 
 Register an account in the Portal, then sign in to access the dashboard.
+
+---
+
+## AI PR Autofill via n8n (No GitHub Actions)
+
+If you want PR descriptions drafted automatically on open while keeping costs low, use the bundled n8n workflow instead of GitHub Actions minutes.
+
+### What you get
+
+- Trigger on `pull_request` events (`opened`, `reopened`, `ready_for_review`)
+- AI-drafted PR body that matches `.github/pull_request_template.md`
+- CI remains the source of truth for checks and merge gates
+
+### Setup
+
+1. Add env vars in your root `.env`:
+   - `GITHUB_WEBHOOK_SECRET`
+   - `GITHUB_TOKEN`
+   - `OPENAI_API_KEY`
+   - `PR_AUTOFILL_MODEL` (optional, default `gpt-4o-mini`)
+2. Restart n8n (`docker compose up -d n8n`).
+3. Import workflow: `n8n/workflows/github-pr-autofill.json`.
+4. In GitHub repo settings → Webhooks:
+   - Payload URL: `http://<your-host>:5678/webhook/github-pr-opened`
+   - Content type: `application/json`
+   - Secret: same as `GITHUB_WEBHOOK_SECRET`
+   - Events: select **Pull requests** only
+5. Open a PR and verify the description is replaced with an AI draft.
+
+### Cost controls
+
+- Run only on PR open/reopen/ready-for-review (default in workflow).
+- Keep prompt input capped (workflow truncates long diffs).
+- Use low-cost model by default; upgrade model only when needed.
+
+Prompt reference: `n8n/prompts/pr-autofill.md`
 
 ---
 
@@ -297,7 +346,12 @@ Every pull request gets a unique preview URL — review UI changes from your pho
 ```bash
 cd apps/portal
 npm install                   # installs deps + runs prisma generate
-cp ../.env.example .env.local # or set DATABASE_URL + NEXTAUTH_SECRET
+cp ../../.env.example .env.local
+# REQUIRED for Prisma:
+export DATABASE_URL="postgresql://postgres:postgres_password_change_me@localhost:5432/teamflow?schema=portal"
+# Optional for local embeds/API:
+export N8N_EDITOR_URL="http://localhost:5678"
+export LANGFUSE_URL="http://localhost:3000"
 npx prisma db push            # create/sync database tables
 npm run dev                   # → http://localhost:3001
 ```

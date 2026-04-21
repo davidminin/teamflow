@@ -1,22 +1,29 @@
 # Pull Request
 
-## Summary
+## Context
 
-- What changed?
-- Why now?
+What problem does this solve, and why now?
 
-## Test Plan
+## What Changed
 
-- [ ] Relevant tests added/updated
-- [ ] Local validation executed (tests/lint/type checks as applicable)
+What is different in this PR?
 
-## AI Context And Policy Checks
+## Why This Approach
 
-- [ ] If behavior/process/architecture changed, I updated `AGENTS.md` and/or `.ai/skills/*/SKILL.md`
-- [ ] New or changed team expectations are reflected in `.ai/skills/INDEX.md` when needed
-- [ ] No secrets or sensitive values were added to code, docs, logs, or examples
+Why this implementation over alternatives?
 
-## Risks / Rollback
+## Impact
 
-- Known risks:
-- Rollback approach:
+Who or what is affected (users, APIs, data, ops)? Any breaking behavior?
+
+## AI Usage
+
+How AI was used, and what you manually reviewed or verified.
+
+## Risks and Rollback
+
+Known risks, detection signals, and rollback plan.
+
+## Follow-ups
+
+Anything intentionally deferred to later PRs.

@@ -3,6 +3,7 @@ export const portalConfig = {
   n8nEditorUrl:
     process.env.NEXT_PUBLIC_N8N_EDITOR_URL ||
     process.env.N8N_EDITOR_URL ||
+    process.env.N8N_URL ||
     "http://localhost:5678",
   n8nApiKey: process.env.N8N_API_KEY || "",
   n8nWebhookUrl:
@@ -30,7 +31,7 @@ export const portalConfig = {
   llmCloudFallback: process.env.LLM_CLOUD_FALLBACK !== "false",
 };
 
-export function getAuthHeaders() {
+export function getAuthHeaders(): Record<string, string> {
   if (!portalConfig.n8nApiKey) return {};
   return { "X-N8N-API-KEY": portalConfig.n8nApiKey };
 }
