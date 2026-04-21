@@ -95,7 +95,6 @@ export function validateWorkerApiKey(request: Request): boolean {
   const provided = request.headers.get("X-Worker-API-Key");
   return provided === expected;
 }
-
 export function heartbeat(
   id: string,
   status?: "idle" | "busy"
@@ -113,7 +112,8 @@ export function heartbeat(
 
 export function updateWorkerStatus(
   id: string,
-  status: "idle" | "busy"
+  status: "idle" | "busy",
+  _currentTask?: string
 ): Worker | undefined {
   const worker = workers.get(id);
   if (!worker) return undefined;

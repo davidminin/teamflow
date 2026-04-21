@@ -3,6 +3,7 @@ export const portalConfig = {
   n8nEditorUrl:
     process.env.NEXT_PUBLIC_N8N_EDITOR_URL ||
     process.env.N8N_EDITOR_URL ||
+    process.env.N8N_URL ||
     "http://localhost:5678",
   n8nApiKey: process.env.N8N_API_KEY || "",
   n8nWebhookUrl:

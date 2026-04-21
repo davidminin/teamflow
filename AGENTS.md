@@ -67,3 +67,10 @@ All shared skill files must include:
 - Anti-patterns
 
 See `.ai/skills/INDEX.md` for the canonical list and owners.
+
+## Local Development Validation Notes
+
+- Verified bootstrap command: `npm run bootstrap -- --departments "qa,eng,ops" --create-default-teams`.
+- `docker compose up -d` requires Docker daemon/Desktop running; otherwise startup fails before containers are created.
+- For portal-only development from `apps/portal`, copy env with `cp ../../.env.example .env.local` and set `DATABASE_URL` before `npx prisma db push`.
+- Worker scripts (`npm run start`, `npm run mcp`) load `worker/.env`; keep `worker/.env.example` keys aligned with runtime expectations (`GITHUB_OWNER`, `GITHUB_REPO`).

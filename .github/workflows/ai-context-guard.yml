@@ -50,7 +50,7 @@ jobs:
           )
 
           for section in "${required_sections[@]}"; do
-            if ! rg --fixed-strings --quiet "$section" AGENTS.md; then
+            if ! grep -Fq "$section" AGENTS.md; then
               echo "Missing AGENTS.md section: $section"
               exit 1
             fi
@@ -78,7 +78,7 @@ jobs:
 
           for skill in "${skill_files[@]}"; do
             for section in "${required_skill_sections[@]}"; do
-              if ! rg --fixed-strings --quiet "$section" "$skill"; then
+              if ! grep -Fq "$section" "$skill"; then
                 echo "Missing section '$section' in $skill"
                 exit 1
               fi

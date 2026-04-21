@@ -36,3 +36,5 @@ logs/
 node_modules/
 dist/
 build/
+apps/portal/.next/
+apps/portal/.turbo/
