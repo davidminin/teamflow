@@ -216,7 +216,7 @@ npm run mcp:dev    # stdio mode + file watching
 
 ## 🚀 Quickstart
 
-**Dependencies:** [Docker Desktop](https://docs.docker.com/desktop/) and Node.js 22+
+**Dependencies:** [Docker Desktop](https://docs.docker.com/desktop/) and Node.js 22+ (see `.nvmrc`; on Windows, [nvm-windows](https://github.com/coreybutler/nvm-windows) can install/use the same version).
 
 ```bash
 # 0. Use required Node version (from .nvmrc)
@@ -228,20 +228,22 @@ cd teamflow
 cp .env.example .env
 # Edit .env — at minimum update NEXTAUTH_SECRET, N8N_ENCRYPTION_KEY,
 # LANGFUSE_NEXTAUTH_SECRET, LANGFUSE_SALT, and passwords.
+# Windows (PowerShell): Copy-Item .env.example .env
 
 # 2. Bootstrap team structure
-npm run bootstrap -- --departments "qa,eng,ops" --create-default-teams
+npm run bootstrap:quickstart
+# Other shells: npm run bootstrap -- --departments qa,eng,ops --create-default-teams
+# Windows PowerShell: npm may drop --flags after npm run — use bootstrap:quickstart, or:
+#   npm run bootstrap -- qa eng ops
+#   $env:TEAMFLOW_DEPARTMENTS="qa,eng,ops"; $env:TEAMFLOW_CREATE_DEFAULT_TEAMS="1"; npm run bootstrap
 
-# 3. Ensure Docker daemon is running (macOS)
-open -a Docker
-until docker info >/dev/null 2>&1; do sleep 1; done
-
-# Linux alternative:
-# sudo systemctl start docker
-# until docker info >/dev/null 2>&1; do sleep 1; done
-
-# 4. Start the stack
-docker compose up -d
+# 3. Start the stack
+npm run start
+# Auto-starts Docker Desktop on macOS/Windows only when Docker is not running.
+# Optional:
+#   npm run start:no-build
+#   npm run status
+#   npm run stop
 ```
 
 If Docker is not running, `docker compose up -d` fails with a daemon socket error. Start Docker Desktop first.

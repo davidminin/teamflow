@@ -23,17 +23,26 @@ export default function RegisterPage() {
         body: JSON.stringify({ name, email, password }),
       });
 
-      const data = await res.json();
+      let data: { error?: string } = {};
+      const text = await res.text();
+      if (text) {
+        try {
+          data = JSON.parse(text) as { error?: string };
+        } catch {
+          setError("Registration failed (invalid response)");
+          return;
+        }
+      }
 
       if (!res.ok) {
         setError(data.error || "Registration failed");
-        setLoading(false);
         return;
       }
 
       router.push("/login?registered=true");
     } catch {
       setError("Something went wrong");
+    } finally {
       setLoading(false);
     }
   }

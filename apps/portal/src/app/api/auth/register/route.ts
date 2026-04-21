@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -49,6 +49,18 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("Registration error:", error);
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2021"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Database is not ready. If you use Docker, restart the portal after Postgres is healthy; locally run: npx prisma db push",
+        },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

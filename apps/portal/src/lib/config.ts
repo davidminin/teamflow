@@ -31,7 +31,7 @@ export const portalConfig = {
   llmCloudFallback: process.env.LLM_CLOUD_FALLBACK !== "false",
 };
 
-export function getAuthHeaders(): Record<string, string> {
+export function getAuthHeaders(): HeadersInit {
   if (!portalConfig.n8nApiKey) return {};
   return { "X-N8N-API-KEY": portalConfig.n8nApiKey };
 }
