@@ -1,5 +1,7 @@
 // In-memory worker registry (PoC — move to Postgres for production)
 
+import { portalConfig } from "@/lib/config";
+
 export interface Worker {
   id: string;
   name: string;
@@ -86,11 +88,26 @@ export function removeWorker(id: string): boolean {
   return workers.delete(id);
 }
 
-export function heartbeat(id: string): Worker | undefined {
+/** Validates `X-Worker-API-Key` when `WORKER_API_KEY` is set on the portal. */
+export function validateWorkerApiKey(request: Request): boolean {
+  const expected = portalConfig.workerApiKey;
+  if (!expected) return true;
+  const provided = request.headers.get("X-Worker-API-Key");
+  return provided === expected;
+}
+
+export function heartbeat(
+  id: string,
+  status?: "idle" | "busy"
+): Worker | undefined {
   const worker = workers.get(id);
   if (!worker) return undefined;
   worker.lastHeartbeat = Date.now();
-  if (worker.status === "offline") worker.status = "idle";
+  if (status === "idle" || status === "busy") {
+    worker.status = status;
+  } else if (worker.status === "offline") {
+    worker.status = "idle";
+  }
   return { ...worker, status: resolveStatus(worker) };
 }
 

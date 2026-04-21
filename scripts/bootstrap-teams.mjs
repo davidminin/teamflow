@@ -1,24 +1,25 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const args = process.argv.slice(2);
-const departmentsArgIndex = args.indexOf("--departments");
-const createDefaults = args.includes("--create-default-teams");
+import { parseBootstrapArgs } from "./bootstrap-teams-parse.mjs";
 
-if (departmentsArgIndex === -1 || !args[departmentsArgIndex + 1]) {
-  console.error(
-    "Usage: npm run bootstrap -- --departments \"qa,eng,ops\" --create-default-teams",
-  );
-  process.exit(1);
+const args = process.argv.slice(2);
+const { departments, createDefaults } = parseBootstrapArgs(args);
+
+function printUsage() {
+  console.error(`Usage:
+  node scripts/bootstrap-teams.mjs --departments qa,eng,ops --create-default-teams
+
+  Environment variables (works with npm run on Windows PowerShell):
+    TEAMFLOW_DEPARTMENTS=qa,eng,ops
+    TEAMFLOW_CREATE_DEFAULT_TEAMS=1
+
+  Quickstart (default departments + default teams, no extra args):
+    npm run bootstrap:quickstart`);
 }
 
-const departments = args[departmentsArgIndex + 1]
-  .split(",")
-  .map((value) => value.trim().toLowerCase())
-  .filter(Boolean);
-
 if (departments.length === 0) {
-  console.error("At least one department is required.");
+  printUsage();
   process.exit(1);
 }
 

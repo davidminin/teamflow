@@ -28,12 +28,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const body = await request.json();
     if (body.heartbeat) {
-      const worker = heartbeat(id, body.status);
+      const hbStatus =
+        body.status === "idle" || body.status === "busy" ? body.status : undefined;
+      const worker = heartbeat(id, hbStatus);
       if (!worker) return NextResponse.json({ error: "Not found" }, { status: 404 });
       return NextResponse.json({ worker });
     }
     if (body.status === "idle" || body.status === "busy") {
-      const worker = updateWorkerStatus(id, body.status, body.currentTask);
+      const worker = updateWorkerStatus(id, body.status);
       if (!worker) return NextResponse.json({ error: "Not found" }, { status: 404 });
       return NextResponse.json({ worker });
     }
