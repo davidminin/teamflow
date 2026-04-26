@@ -4,8 +4,39 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+const DEV_FALLBACK_SECRET = "teamflow-dev-only-insecure-secret-change-me";
+
+function isLocalUrl(url?: string) {
+  if (!url) return false;
+  try {
+    const { hostname } = new URL(url);
+    return hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+function resolveAuthSecret() {
+  if (process.env.NEXTAUTH_SECRET) {
+    return process.env.NEXTAUTH_SECRET;
+  }
+
+  const isLocalRuntime =
+    process.env.NODE_ENV !== "production" ||
+    isLocalUrl(process.env.NEXTAUTH_URL) ||
+    isLocalUrl(process.env.PORTAL_URL);
+
+  if (isLocalRuntime) {
+    return DEV_FALLBACK_SECRET;
+  }
+
+  throw new Error(
+    "Missing NEXTAUTH_SECRET for non-local production runtime. Set NEXTAUTH_SECRET in environment configuration."
+  );
+}
 
 export const authOptions: NextAuthOptions = {
+  secret: resolveAuthSecret(),
   providers: [
     CredentialsProvider({
       name: "Email",

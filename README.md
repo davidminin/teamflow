@@ -218,6 +218,17 @@ npm run mcp:dev    # stdio mode + file watching
 
 **Dependencies:** [Docker Desktop](https://docs.docker.com/desktop/) and Node.js 22+ (see `.nvmrc`; on Windows, [nvm-windows](https://github.com/coreybutler/nvm-windows) can install/use the same version).
 
+### Env file matrix
+
+| File | Used by | When to use |
+| ---- | ------- | ----------- |
+| `/.env` | Docker Compose services | Running full stack from repo root (`npm run start` / `docker compose up`) |
+| `/.env.example` | Template for `/.env` | Initial full-stack setup |
+| `/apps/portal/.env.local` | Next.js portal app | Running portal directly (`cd apps/portal && npm run dev`) |
+| `/apps/portal/.env.example` | Template for portal local env | Initial portal-only setup |
+| `/worker/.env` | Worker runtime | Running worker scripts (`cd worker && npm run start` / `npm run mcp`) |
+| `/worker/.env.example` | Template for worker env | Initial worker setup |
+
 ```bash
 # 0. Use required Node version (from .nvmrc)
 nvm use
@@ -348,9 +359,9 @@ Every pull request gets a unique preview URL — review UI changes from your pho
 ```bash
 cd apps/portal
 npm install                   # installs deps + runs prisma generate
-cp ../../.env.example .env.local
+cp .env.example .env.local
 # REQUIRED for Prisma:
-export DATABASE_URL="postgresql://postgres:postgres_password_change_me@localhost:5432/teamflow?schema=portal"
+# DATABASE_URL is included in apps/portal/.env.example; override if needed.
 # Optional for local embeds/API:
 export N8N_EDITOR_URL="http://localhost:5678"
 export LANGFUSE_URL="http://localhost:3000"

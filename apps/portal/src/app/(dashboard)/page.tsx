@@ -1,5 +1,6 @@
 import manifest from "@/data/manifest.json";
 import { getAuthHeaders, portalConfig } from "@/lib/config";
+import EmbeddedProjectsPanel from "@/components/EmbeddedProjectsPanel";
 
 type WorkflowRecord = {
   id: string;
@@ -82,6 +83,8 @@ export default async function DashboardPage() {
           ))}
         </div>
       </section>
+
+      <EmbeddedProjectsPanel />
 
       {/* Workflows Table */}
       <section className="mt-8">
