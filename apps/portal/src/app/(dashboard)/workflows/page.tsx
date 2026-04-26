@@ -10,36 +10,28 @@ export default function WorkflowsPage() {
   useEffect(() => {
     const isLocalService =
       n8nUrl.includes("localhost") || n8nUrl.includes("127.0.0.1");
-    const isLocalBrowser =
-      typeof window !== "undefined" &&
-      (window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1");
-    setCanEmbed(!isLocalService || isLocalBrowser);
+    const isEmbedProxy =
+      n8nUrl.includes("localhost:5680") || n8nUrl.includes("127.0.0.1:5680");
+    setCanEmbed(!isLocalService || isEmbedProxy);
   }, [n8nUrl]);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-3">
-        <div>
-          <h1 className="text-lg font-semibold">Workflows</h1>
-          <p className="text-xs text-zinc-500">n8n visual workflow editor</p>
-        </div>
-        {canEmbed && (
-          <a
-            href={n8nUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800"
-          >
-            Open in new tab ↗
-          </a>
-        )}
+    <div className="relative flex h-full flex-col">
+      <div className="absolute right-4 top-4 z-10">
+        <a
+          href={n8nUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-md border border-zinc-700 bg-zinc-950/80 px-3 py-1.5 text-xs text-zinc-300 backdrop-blur hover:bg-zinc-800"
+        >
+          Open in new tab ↗
+        </a>
       </div>
 
       {canEmbed ? (
         <iframe
           src={n8nUrl}
-          className="flex-1 border-0"
+          className="h-full w-full border-0"
           title="n8n Workflow Editor"
           allow="clipboard-read; clipboard-write"
         />

@@ -108,6 +108,12 @@ async function ensureDockerIfNeeded() {
 }
 
 async function main() {
+  if (action === "dev") {
+    await ensureDockerIfNeeded();
+    run("docker", ["compose", "up", "--watch"]);
+    return;
+  }
+
   if (action === "start" || action === "start:no-build") {
     await ensureDockerIfNeeded();
     const args = ["compose", "up", "-d"];
@@ -130,7 +136,7 @@ async function main() {
   }
 
   console.error(
-    "Usage: node scripts/stack.mjs [start|start:no-build|status|stop]",
+    "Usage: node scripts/stack.mjs [dev|start|start:no-build|status|stop]",
   );
   process.exit(1);
 }

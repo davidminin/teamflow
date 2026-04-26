@@ -10,38 +10,29 @@ export default function ObservabilityPage() {
   useEffect(() => {
     const isLocalService =
       langfuseUrl.includes("localhost") || langfuseUrl.includes("127.0.0.1");
-    const isLocalBrowser =
-      typeof window !== "undefined" &&
-      (window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1");
-    setCanEmbed(!isLocalService || isLocalBrowser);
+    const isEmbedProxy =
+      langfuseUrl.includes("localhost:3002") ||
+      langfuseUrl.includes("127.0.0.1:3002");
+    setCanEmbed(!isLocalService || isEmbedProxy);
   }, [langfuseUrl]);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-3">
-        <div>
-          <h1 className="text-lg font-semibold">Observability</h1>
-          <p className="text-xs text-zinc-500">
-            Langfuse LLM tracing and analytics
-          </p>
-        </div>
-        {canEmbed && (
-          <a
-            href={langfuseUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800"
-          >
-            Open in new tab ↗
-          </a>
-        )}
+    <div className="relative flex h-full flex-col">
+      <div className="absolute right-4 top-4 z-10">
+        <a
+          href={langfuseUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-md border border-zinc-700 bg-zinc-950/80 px-3 py-1.5 text-xs text-zinc-300 backdrop-blur hover:bg-zinc-800"
+        >
+          Open in new tab ↗
+        </a>
       </div>
 
       {canEmbed ? (
         <iframe
           src={langfuseUrl}
-          className="flex-1 border-0"
+          className="h-full w-full border-0"
           title="Langfuse Dashboard"
           allow="clipboard-read; clipboard-write"
         />

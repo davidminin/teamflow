@@ -29,12 +29,14 @@ function EmbedPanel({
   useEffect(() => {
     const isLocalService =
       url.includes("localhost") || url.includes("127.0.0.1");
-    const isLocalBrowser =
-      typeof window !== "undefined" &&
-      (window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1");
-
-    setCanEmbed(!isLocalService || isLocalBrowser);
+    const isEmbedProxy =
+      url.includes("localhost:5680") ||
+      url.includes("127.0.0.1:5680") ||
+      url.includes("localhost:3002") ||
+      url.includes("127.0.0.1:3002");
+    // Local service UIs often send frame-blocking headers (X-Frame-Options/CSP).
+    // Allow iframe-safe local proxy endpoints for local development.
+    setCanEmbed(!isLocalService || isEmbedProxy);
   }, [url]);
 
   return (
@@ -44,16 +46,14 @@ function EmbedPanel({
           <h3 className="text-base font-semibold">{title}</h3>
           <p className="text-xs text-zinc-500">{description}</p>
         </div>
-        {canEmbed && (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800"
-          >
-            Open in new tab ↗
-          </a>
-        )}
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800"
+        >
+          Open in new tab ↗
+        </a>
       </div>
 
       {canEmbed ? (

@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   const workflows = await getWorkflows();
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8">
+    <div className="mx-auto max-w-6xl">
       <h1 className="text-2xl font-bold">Dashboard</h1>
       <p className="mt-1 text-sm text-zinc-400">
         Overview of departments, teams, and active workflows.

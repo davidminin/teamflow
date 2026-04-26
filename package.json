@@ -9,6 +9,7 @@
     "bootstrap": "node scripts/bootstrap-teams.mjs",
     "bootstrap:quickstart": "node scripts/bootstrap-teams.mjs --departments qa,eng,ops --create-default-teams",
     "test": "node --test scripts/bootstrap-teams-parse.test.mjs scripts/portal-middleware-matcher.test.mjs",
+    "dev": "node scripts/stack.mjs dev",
     "start": "node scripts/stack.mjs start",
     "start:no-build": "node scripts/stack.mjs start:no-build",
     "status": "node scripts/stack.mjs status",

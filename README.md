@@ -266,6 +266,8 @@ Then open:
 | **Portal**   | http://localhost:3001        |
 | **n8n**      | http://localhost:5678        |
 | **Langfuse** | http://localhost:3000        |
+| **n8n Embed Proxy** | http://localhost:5680  |
+| **Langfuse Embed Proxy** | http://localhost:3002 |
 
 Register an account in the Portal, then sign in to access the dashboard.
 
@@ -363,8 +365,9 @@ cp .env.example .env.local
 # REQUIRED for Prisma:
 # DATABASE_URL is included in apps/portal/.env.example; override if needed.
 # Optional for local embeds/API:
-export N8N_EDITOR_URL="http://localhost:5678"
-export LANGFUSE_URL="http://localhost:3000"
+# Use embed proxy ports to avoid iframe header blocking in local dev.
+export N8N_EDITOR_URL="http://localhost:5680"
+export LANGFUSE_URL="http://localhost:3002"
 npx prisma db push            # create/sync database tables
 npm run dev                   # → http://localhost:3001
 ```
@@ -374,6 +377,14 @@ npm run dev                   # → http://localhost:3001
 ```bash
 docker compose up -d          # starts all services
 ```
+
+### Full stack (hot reload)
+
+```bash
+npm run dev
+```
+
+This runs `docker compose up --watch` so portal source/config changes sync into the container and trigger Next.js hot reload automatically.
 
 ### Portal Tech
 

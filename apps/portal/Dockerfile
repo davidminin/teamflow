@@ -6,6 +6,16 @@ COPY prisma ./prisma/
 RUN npm install
 RUN npx prisma generate
 
+FROM node:22-bullseye-slim AS dev
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npx prisma generate
+ENV NODE_ENV=development
+ENV PORT=3001
+EXPOSE 3001
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push && npm run dev"]
+
 FROM node:22-bullseye-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules

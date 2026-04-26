@@ -61,7 +61,7 @@ export default function NewTaskPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-8">
+    <div className="mx-auto max-w-2xl">
       <div className="mb-6">
         <Link
           href="/tasks"
