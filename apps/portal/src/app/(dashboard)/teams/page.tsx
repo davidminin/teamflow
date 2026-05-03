@@ -2,7 +2,7 @@ import manifest from "@/data/manifest.json";
 
 export default function TeamsPage() {
   return (
-    <div className="mx-auto max-w-4xl px-6 py-8">
+    <div className="mx-auto max-w-4xl">
       <h1 className="text-2xl font-bold">Teams</h1>
       <p className="mt-1 text-sm text-zinc-400">
         Manage departments and team configurations.

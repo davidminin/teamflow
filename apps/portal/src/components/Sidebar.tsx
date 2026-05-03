@@ -22,75 +22,72 @@ export default function Sidebar() {
   const { data: session } = useSession();
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r border-zinc-800 bg-zinc-950">
-      <div className="flex h-14 items-center border-b border-zinc-800 px-4">
-        <Link href="/" className="text-lg font-bold text-white">
+    <header className="border-b border-zinc-800 bg-zinc-950">
+      <div className="flex h-14 items-center gap-6 px-6">
+        <Link href="/" className="shrink-0 text-lg font-bold text-white">
           TeamFlow
         </Link>
-      </div>
 
-      <nav className="flex-1 space-y-1 p-3">
-        {navItems.map((item) => {
-          const active =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
-                active
-                  ? "bg-zinc-800 text-white"
-                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-              }`}
-            >
-              <span>{item.icon}</span>
-              {item.label}
-            </Link>
-          );
-        })}
+        <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+          {navItems.map((item) => {
+            const active =
+              pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-sm transition ${
+                  active
+                    ? "bg-zinc-800 text-white"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                }`}
+              >
+                <span>{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-        <div className="my-3 border-t border-zinc-800/50" />
+        <div className="flex items-center gap-3">
+          {bottomNavItems.map((item) => {
+            const active =
+              pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-sm transition ${
+                  active
+                    ? "bg-zinc-800 text-white"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                }`}
+              >
+                <span>{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
 
-        {bottomNavItems.map((item) => {
-          const active =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
-                active
-                  ? "bg-zinc-800 text-white"
-                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-              }`}
-            >
-              <span>{item.icon}</span>
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="border-t border-zinc-800 p-3">
-        <div className="flex items-center justify-between">
-          <div className="truncate">
-            <p className="truncate text-sm text-white">
+          <div className="hidden border-l border-zinc-800 pl-3 sm:block">
+            <p className="max-w-40 truncate text-sm text-white">
               {session?.user?.name || "User"}
             </p>
-            <p className="truncate text-xs text-zinc-500">
+            <p className="max-w-40 truncate text-xs text-zinc-500">
               {session?.user?.email}
             </p>
           </div>
+
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="ml-2 rounded-md px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-white"
+            className="rounded-md px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-white"
           >
             Sign out
           </button>
         </div>
       </div>
-    </aside>
+    </header>
   );
 }

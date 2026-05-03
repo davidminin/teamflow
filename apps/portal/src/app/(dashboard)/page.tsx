@@ -1,5 +1,6 @@
 import manifest from "@/data/manifest.json";
 import { getAuthHeaders, portalConfig } from "@/lib/config";
+import EmbeddedProjectsPanel from "@/components/EmbeddedProjectsPanel";
 
 type WorkflowRecord = {
   id: string;
@@ -31,7 +32,7 @@ export default async function DashboardPage() {
   const workflows = await getWorkflows();
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8">
+    <div className="mx-auto max-w-6xl">
       <h1 className="text-2xl font-bold">Dashboard</h1>
       <p className="mt-1 text-sm text-zinc-400">
         Overview of departments, teams, and active workflows.
@@ -82,6 +83,8 @@ export default async function DashboardPage() {
           ))}
         </div>
       </section>
+
+      <EmbeddedProjectsPanel />
 
       {/* Workflows Table */}
       <section className="mt-8">

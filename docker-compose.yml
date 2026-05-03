@@ -5,6 +5,7 @@ services:
     build:
       context: ./apps/portal
       dockerfile: Dockerfile
+      target: dev
     container_name: teamflow-portal
     restart: unless-stopped
     depends_on:
@@ -14,20 +15,55 @@ services:
         condition: service_started
       langfuse:
         condition: service_started
+      embed-proxy-n8n:
+        condition: service_started
+      embed-proxy-langfuse:
+        condition: service_started
     environment:
-      # Next.js standalone defaults PORT to 3000; must match ports mapping below
+      # Next.js dev server defaults PORT to 3000; must match ports mapping below
       PORT: "3001"
+      WATCHPACK_POLLING: "true"
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=portal
       NEXTAUTH_URL: ${PORTAL_URL:-http://localhost:3001}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       N8N_API_URL: http://n8n:5678/api/v1
-      N8N_EDITOR_URL: ${N8N_URL}
+      N8N_EDITOR_URL: ${N8N_EDITOR_URL:-http://localhost:5680}
       N8N_API_KEY: ${N8N_API_KEY}
       N8N_WEBHOOK_URL: http://n8n:5678/webhook/clickup-events
       CLICKUP_WEBHOOK_SECRET: ${CLICKUP_WEBHOOK_SECRET:-}
-      LANGFUSE_URL: ${LANGFUSE_URL}
+      LANGFUSE_URL: ${PORTAL_LANGFUSE_URL:-http://localhost:3002}
     ports:
       - "3001:3001"
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/portal/src
+          target: /app/src
+        - action: sync
+          path: ./apps/portal/public
+          target: /app/public
+        - action: sync
+          path: ./apps/portal/prisma
+          target: /app/prisma
+        - action: sync
+          path: ./apps/portal/next.config.mjs
+          target: /app/next.config.mjs
+        - action: sync
+          path: ./apps/portal/tailwind.config.ts
+          target: /app/tailwind.config.ts
+        - action: sync
+          path: ./apps/portal/postcss.config.mjs
+          target: /app/postcss.config.mjs
+        - action: sync
+          path: ./apps/portal/tsconfig.json
+          target: /app/tsconfig.json
+        - action: sync
+          path: ./apps/portal/.env.local
+          target: /app/.env.local
+        - action: rebuild
+          path: ./apps/portal/package.json
+        - action: rebuild
+          path: ./apps/portal/package-lock.json
 
   postgres:
     image: postgres:16-alpine
@@ -175,6 +211,28 @@ services:
       - "5678:5678"
     volumes:
       - n8n_data:/home/node/.n8n
+
+  embed-proxy-n8n:
+    image: caddy:2-alpine
+    container_name: teamflow-embed-proxy-n8n
+    restart: unless-stopped
+    depends_on:
+      - n8n
+    volumes:
+      - ./docker/embed-proxy/n8n.Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "5680:5680"
+
+  embed-proxy-langfuse:
+    image: caddy:2-alpine
+    container_name: teamflow-embed-proxy-langfuse
+    restart: unless-stopped
+    depends_on:
+      - langfuse
+    volumes:
+      - ./docker/embed-proxy/langfuse.Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "3002:3002"
 
 volumes:
   n8n_data:

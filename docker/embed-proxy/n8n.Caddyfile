@@ -1,0 +1,9 @@
+:5680 {
+  reverse_proxy n8n:5678
+
+  header {
+    -X-Frame-Options
+    -Content-Security-Policy
+    Content-Security-Policy "frame-ancestors http://localhost:3001 http://127.0.0.1:3001"
+  }
+}
