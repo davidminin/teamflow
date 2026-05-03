@@ -16,6 +16,17 @@ Before coding, AI assistants and contributors should load:
 2. `.ai/skills/INDEX.md`
 3. Any skill listed in the index that matches the current task
 
+## AI Assistant Principles
+
+These rules distill common guidance from Anthropic on [building effective agents](https://www.anthropic.com/engineering/building-effective-agents) and [Claude prompting practices](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/claude-prompting-best-practices). They apply to any autonomous or assistant-driven work in this repo.
+
+- **Start simple** — Prefer the smallest change that satisfies the request (clear edits, one verification path, little new abstraction). Add orchestration, frameworks, or multi-step autonomy only when a simpler approach demonstrably fails.
+- **Workflows vs open-ended agency** — Prefer **predetermined paths** (scripts, tests, explicit steps) when the flow is known. Use **model-directed loops** only for unpredictable work; pair them with guardrails (scope limits, stopping conditions, sandboxes).
+- **Ground truth** — Treat tool output, builds, and tests as source of truth; do not substitute plausible guesses for verified behavior.
+- **Interfaces matter** — MCP tools, scripts, and APIs should read like good docstrings: obvious names and parameters, sharp boundaries between tools, and documented edge cases (Anthropic calls this investing in the agent–computer interface).
+- **Be explicit** — State intended outcomes, constraints, and definition of done plainly; avoid ambiguous instructions when asking for implementation work.
+- **Human alignment** — Automated checks catch regressions; review catches intent and fit with the wider system.
+
 ## Definition Of Done
 
 Every code change should:
@@ -47,6 +58,7 @@ If implementation changes how the system is built or operated, update:
 
 - `AGENTS.md` when policy-level expectations change, and/or
 - the relevant `.ai/skills/*/SKILL.md` file when task-specific behavior changes.
+- Cross-cutting technical decisions: add or update an ADR under `/docs/adr/` (see [`/docs/README.md`](/docs/README.md)).
 
 No architecture/process behavior change is complete without these updates.
 

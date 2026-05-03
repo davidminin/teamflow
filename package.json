@@ -13,6 +13,6 @@
     "start": "node scripts/stack.mjs start",
     "start:no-build": "node scripts/stack.mjs start:no-build",
     "status": "node scripts/stack.mjs status",
-    "stop": "node scripts/stack.mjs stop" 
+    "stop": "node scripts/stack.mjs stop"
   }
 }

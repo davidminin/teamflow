@@ -13,6 +13,7 @@ Keep architecture and process decisions explicit, consistent, and captured in-re
 ## Mandatory Constraints
 
 - Document architecture-impacting changes in the same PR.
+- Record cross-cutting technical decisions as ADRs under `/docs/adr/` (see [`/docs/README.md`](/docs/README.md) for layout and ClickUp mirroring).
 - Update `AGENTS.md` for policy-level behavior changes.
 - Update the relevant shared skill for task-level process changes.
 - Describe intended behavior and migration impact in PR context.

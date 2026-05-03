@@ -402,7 +402,7 @@ Tasks tracked in [ClickUp](https://app.clickup.com/90171007544/v/l/2kz9rrhr-357)
 
 - **Sprint** — current iteration
 - **Backlog** — prioritized upcoming work
-- **Knowledge Base** — architecture docs, ADRs
+- **Knowledge Base** — architecture docs and ADRs; canonical copy in-repo under [`docs/`](/docs/README.md) (ClickUp list can mirror or link for stakeholders)
 
 ---
 
