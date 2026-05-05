@@ -1,8 +1,16 @@
-# 📱 TeamFlow
+# TeamFlow
 
-**Develop from your phone for the cost of electricity.**
+**Develop at the cost of electricity without sacrificing standards or security.**
 
-TeamFlow is a self-hosted platform that turns your phone into a full development environment. Review live previews, give feedback in natural language, and watch AI workers implement your changes — all from a mobile browser. No laptop required.
+TeamFlow is a self-hosted platform that turns your physical devices (pc, laptop & phone) into a fully integrated development environment.
+
+It is also extremely simple. It's a wrapper of the top Open Source projects... meaninig the community will continue to improve it for free.
+
+Core Features
+- 🤑 Practically free AI development lifecycle
+- 👀 Live previews with every change
+- 📱 Develop from your phone
+- ⚡ Automate any part of your business with a visual editor (n8n)
 
 The stack: [n8n](https://n8n.io) visual workflows, [Langfuse](https://langfuse.com) LLM observability, a Next.js command portal, and local AI workers — all running on your own hardware in a single Docker stack. Connect ClickUp, GitHub, and Slack, then develop by conversation.
 
@@ -12,13 +20,7 @@ The stack: [n8n](https://n8n.io) visual workflows, [Langfuse](https://langfuse.c
 
 ## 💡 Why TeamFlow?
 
-### The Problem
-
-You're away from your desk. You have an idea — a bug fix, a feature tweak, a UI change. Your options:
-
-1. **Wait** until you're back at your laptop
-2. **Try** to code on your phone (good luck)
-3. **Pay** $50+/seat/month for a managed AI agent to do it for you
+Open source is about as good as frontier LLMs. Most tasks can be run on your hardware without incurring a cost. 
 
 ### The TeamFlow Way
 
